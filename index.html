@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, code format/minify (JSON, HTML, CSS, JS, YAML, XML, .env, PHP, SQL), fake REST API, cron, timestamp, cURL, and more. No signup required.">
+        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, OpenAPI/Swagger, placeholder and random images, Laravel/PHP/Kali snippets, script sanitizer, Markdown preview, code format/minify, fake REST API, cron, timestamp, cURL, and more. No signup required.">
     <title>Penguin — Generators and utilities for developers</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%90%A7</text></svg>">
@@ -734,6 +734,77 @@
         #page-format #fmt-status.hint {
             color: #666;
         }
+
+        /* ===== OPENAPI / MD / SANITIZER ===== */
+        #swagger-ui-mount {
+            min-height: 420px;
+            background: #fafafa;
+            border: 1px solid #1e1e1e;
+            border-radius: 5px;
+            margin-top: 12px;
+        }
+
+        #swagger-ui-mount .swagger-ui {
+            font-family: inherit;
+        }
+
+        .md-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        @media (max-width: 768px) {
+            .md-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .md-preview {
+            background: #0a0a0a;
+            border: 1px solid #1e1e1e;
+            border-radius: 5px;
+            padding: 16px;
+            min-height: 280px;
+            max-height: 520px;
+            overflow-y: auto;
+            color: #ddd;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .md-preview h1,
+        .md-preview h2,
+        .md-preview h3 {
+            color: var(--neon);
+            margin: 0.8em 0 0.4em;
+        }
+
+        .md-preview code {
+            background: #111;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        .md-preview pre {
+            background: #111;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .md-preview a {
+            color: #6cf;
+        }
+
+        .ph-img-preview {
+            max-width: 100%;
+            margin-top: 12px;
+            border-radius: 5px;
+            border: 1px solid #282828;
+        }
     </style>
 </head>
 
@@ -772,6 +843,14 @@
             <button onclick="showPage('linux', this)"><span class="icon">&gt;</span> Linux</button>
             <button onclick="showPage('chmod', this)"><span class="icon">&gt;</span> Chmod</button>
             <button onclick="showPage('format', this)"><span class="icon">&gt;</span> Format / Minify</button>
+            <button onclick="showPage('openapi', this)"><span class="icon">&gt;</span> OpenAPI / Swagger</button>
+            <button onclick="showPage('placeholder', this)"><span class="icon">&gt;</span> Placeholder IMG</button>
+            <button onclick="showPage('randomimg', this)"><span class="icon">&gt;</span> Random IMG</button>
+            <button onclick="showPage('laravel', this)"><span class="icon">&gt;</span> Laravel</button>
+            <button onclick="showPage('phpsnip', this)"><span class="icon">&gt;</span> PHP snippets</button>
+            <button onclick="showPage('kali', this)"><span class="icon">&gt;</span> Kali</button>
+            <button onclick="showPage('sanitize', this)"><span class="icon">&gt;</span> Script sanitizer</button>
+            <button onclick="showPage('mdpreview', this)"><span class="icon">&gt;</span> MD preview</button>
         </nav>
         <div class="sidebar-footer">Penguin · <a href="https://web.ap.it" target="_blank" rel="noopener"
                 style="color:#444;text-decoration:none">by @ndrea</a></div>
@@ -1931,6 +2010,206 @@
                     <div class="notify" id="fmt-notify">Runs in your browser; large inputs may be slow</div>
                 </div>
 
+                <!-- OPENAPI / SWAGGER UI -->
+                <div id="page-openapi" class="page">
+                    <div class="stat-bar">
+                        <span>OPENAPI 3 · SWAGGER UI</span>
+                        <span>PASTE JSON OR YAML</span>
+                    </div>
+                    <p style="font-size:11px;color:#666;margin-bottom:16px;line-height:1.6">Paste an OpenAPI 3.x or Swagger 2.0
+                        document (JSON or YAML). Rendering loads Swagger UI from the CDN the first time.</p>
+                    <div class="btn-row" style="margin-bottom:12px">
+                        <button type="button" class="btn" onclick="openapiLoadExample()">Load Petstore example</button>
+                        <button type="button" class="btn" onclick="renderOpenApi()"
+                            style="background:var(--neon);color:#000">Render Swagger UI</button>
+                    </div>
+                    <div class="label">Specification (JSON or YAML)_</div>
+                    <textarea id="openapi-spec" class="fmt-io" rows="10" spellcheck="false"
+                        placeholder='{ "openapi": "3.0.0", ... }'></textarea>
+                    <p id="openapi-status" style="font-size:11px;min-height:18px;margin-bottom:8px;color:#666"></p>
+                    <div id="swagger-ui-mount"></div>
+                    <div class="notify" id="openapi-notify">Spec stays in your browser</div>
+                </div>
+
+                <!-- PLACEHOLDER IMAGE -->
+                <div id="page-placeholder" class="page">
+                    <div class="stat-bar">
+                        <span>PLACEHOLDER</span>
+                        <span>PLACECO / DUMMYIMAGE</span>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <div class="label">Width</div>
+                            <input type="number" id="ph-w" value="600" min="16" max="4000" oninput="genPlaceholder()">
+                        </div>
+                        <div>
+                            <div class="label">Height</div>
+                            <input type="number" id="ph-h" value="400" min="16" max="4000" oninput="genPlaceholder()">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <div class="label">Background</div>
+                            <input type="text" id="ph-bg" value="1a1a1a" placeholder="hex without #" oninput="genPlaceholder()"
+                                autocomplete="off">
+                        </div>
+                        <div>
+                            <div class="label">Text color</div>
+                            <input type="text" id="ph-fg" value="00ff41" placeholder="hex without #" oninput="genPlaceholder()"
+                                autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="label">Label text_</div>
+                    <input type="text" id="ph-txt" value="Penguin" oninput="genPlaceholder()" autocomplete="off">
+                    <div class="label">URL (placehold.co)</div>
+                    <div class="cmd-box" id="ph-url" onclick="clip('ph-url')" style="word-break:break-all;font-size:12px">----
+                    </div>
+                    <img id="ph-img" class="ph-img-preview" alt="Placeholder preview" crossorigin="anonymous" style="display:none">
+                    <div class="notify" id="ph-notify">Click URL to copy</div>
+                </div>
+
+                <!-- RANDOM IMAGE BY CATEGORY -->
+                <div id="page-randomimg" class="page">
+                    <div class="stat-bar">
+                        <span>LOREM FLICKR</span>
+                        <span>RANDOM PHOTO BY TAG</span>
+                    </div>
+                    <p style="font-size:11px;color:#666;margin-bottom:16px">Uses loremflickr.com (random image for tag).
+                        Third-party images; not for production use without checking license.</p>
+                    <div class="row">
+                        <div>
+                            <div class="label">Width</div>
+                            <input type="number" id="rf-w" value="640" min="100" max="1920" oninput="genRandomImg()">
+                        </div>
+                        <div>
+                            <div class="label">Height</div>
+                            <input type="number" id="rf-h" value="480" min="100" max="1920" oninput="genRandomImg()">
+                        </div>
+                    </div>
+                    <div class="label">Category / tag (e.g. cat, dog, city, nature, tech)</div>
+                    <input type="text" id="rf-cat" value="nature" oninput="genRandomImg()" autocomplete="off">
+                    <div class="btn-row" style="margin-top:12px">
+                        <button type="button" class="btn" onclick="genRandomImg(true)">&#x21BB; New random</button>
+                    </div>
+                    <div class="label">URL</div>
+                    <div class="cmd-box" id="rf-url" onclick="clip('rf-url')" style="word-break:break-all;font-size:12px">----
+                    </div>
+                    <img id="rf-img" class="ph-img-preview" alt="Random preview" crossorigin="anonymous" style="display:none">
+                    <div class="notify" id="rf-notify">Click URL to copy</div>
+                </div>
+
+                <!-- LARAVEL SNIPPETS -->
+                <div id="page-laravel" class="page">
+                    <div class="label">Search_</div>
+                    <input type="text" id="laravel-search" placeholder="e.g. migrate, route, queue, artisan..."
+                        oninput="filterLaravel()" autocomplete="off">
+                    <div class="cron-presets" id="laravel-cats">
+                        <button class="lx-cat-active" onclick="filterLaravelCat('all', this)">All</button>
+                        <button onclick="filterLaravelCat('artisan', this)">Artisan</button>
+                        <button onclick="filterLaravelCat('routes', this)">Routes</button>
+                        <button onclick="filterLaravelCat('eloquent', this)">Eloquent</button>
+                        <button onclick="filterLaravelCat('blade', this)">Blade</button>
+                        <button onclick="filterLaravelCat('middleware', this)">Middleware</button>
+                        <button onclick="filterLaravelCat('config', this)">Config</button>
+                        <button onclick="filterLaravelCat('queues', this)">Queues</button>
+                        <button onclick="filterLaravelCat('testing', this)">Testing</button>
+                    </div>
+                    <div class="stat-bar"><span id="laravel-count">---</span></div>
+                    <div id="laravel-list"></div>
+                    <div class="notify" id="laravel-notify" style="margin-top:15px">Click any snippet to copy</div>
+                </div>
+
+                <!-- PHP SNIPPETS -->
+                <div id="page-phpsnip" class="page">
+                    <div class="label">Search_</div>
+                    <input type="text" id="php-search" placeholder="e.g. array, PDO, match, enum..."
+                        oninput="filterPhpSnip()" autocomplete="off">
+                    <div class="cron-presets" id="php-cats">
+                        <button class="lx-cat-active" onclick="filterPhpSnipCat('all', this)">All</button>
+                        <button onclick="filterPhpSnipCat('syntax', this)">Syntax</button>
+                        <button onclick="filterPhpSnipCat('types', this)">Types</button>
+                        <button onclick="filterPhpSnipCat('arrays', this)">Arrays</button>
+                        <button onclick="filterPhpSnipCat('strings', this)">Strings</button>
+                        <button onclick="filterPhpSnipCat('pdo', this)">PDO</button>
+                        <button onclick="filterPhpSnipCat('errors', this)">Errors</button>
+                        <button onclick="filterPhpSnipCat('laravel', this)">Laravel</button>
+                    </div>
+                    <div class="stat-bar"><span id="php-count">---</span></div>
+                    <div id="php-list"></div>
+                    <div class="notify" id="php-notify" style="margin-top:15px">Click any snippet to copy</div>
+                </div>
+
+                <!-- KALI LINUX -->
+                <div id="page-kali" class="page">
+                    <div class="label">Search_</div>
+                    <input type="text" id="kali-search" placeholder="e.g. nmap, wireshark, metasploit..."
+                        oninput="filterKali()" autocomplete="off">
+                    <div class="cron-presets" id="kali-cats">
+                        <button class="lx-cat-active" onclick="filterKaliCat('all', this)">All</button>
+                        <button onclick="filterKaliCat('setup', this)">Setup</button>
+                        <button onclick="filterKaliCat('scan', this)">Scan</button>
+                        <button onclick="filterKaliCat('web', this)">Web</button>
+                        <button onclick="filterKaliCat('wifi', this)">WiFi</button>
+                        <button onclick="filterKaliCat('exploit', this)">Exploit</button>
+                        <button onclick="filterKaliCat('forensics', this)">Forensics</button>
+                        <button onclick="filterKaliCat('password', this)">Password</button>
+                        <button onclick="filterKaliCat('reporting', this)">Reporting</button>
+                    </div>
+                    <div class="stat-bar"><span id="kali-count">---</span></div>
+                    <div id="kali-list"></div>
+                    <div class="notify" id="kali-notify" style="margin-top:15px">Click any command to copy</div>
+                </div>
+
+                <!-- SCRIPT SANITIZER -->
+                <div id="page-sanitize" class="page">
+                    <div class="stat-bar">
+                        <span>ESCAPE / STRIP</span>
+                        <span>LOCAL</span>
+                    </div>
+                    <div class="row" style="margin-bottom:8px">
+                        <div>
+                            <div class="label">Mode</div>
+                            <select id="san-mode" onchange="runSan()">
+                                <option value="html">HTML escape (&amp; &lt; &gt; &quot;)</option>
+                                <option value="attr">Escape for HTML attribute</option>
+                                <option value="strip">Strip &lt;script&gt; blocks</option>
+                                <option value="shell">Shell-safe quoting (single-line)</option>
+                                <option value="js">Escape for JS string</option>
+                                <option value="all">Strip scripts + HTML escape</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="label">Input_</div>
+                    <textarea id="san-in" class="fmt-io" rows="8" oninput="runSan()" spellcheck="false"></textarea>
+                    <div class="label">Output_</div>
+                    <textarea id="san-out" class="fmt-io out" rows="8" readonly spellcheck="false"></textarea>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="runSan()">Apply</button>
+                        <button type="button" class="btn" onclick="sanCopy()">Copy output</button>
+                    </div>
+                    <div class="notify" id="san-notify">Sanitization is best-effort; review output before use</div>
+                </div>
+
+                <!-- MARKDOWN PREVIEW -->
+                <div id="page-mdpreview" class="page">
+                    <div class="stat-bar">
+                        <span>MARKED + DOMPURIFY</span>
+                        <span>LOCAL PREVIEW</span>
+                    </div>
+                    <div class="md-grid">
+                        <div>
+                            <div class="label">Markdown_</div>
+                            <textarea id="md-in" class="fmt-io" rows="16" oninput="runMdPreview()" spellcheck="false"
+                                placeholder="# Hello&#10;&#10;&#96;&#96;&#96;php&#10;echo 'Penguin';&#10;&#96;&#96;&#96;"></textarea>
+                        </div>
+                        <div>
+                            <div class="label">Preview_</div>
+                            <div id="md-out" class="md-preview"></div>
+                        </div>
+                    </div>
+                    <div class="notify" id="md-notify">Preview is sanitized; scripts are stripped</div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1943,6 +2222,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.11/beautify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sql-formatter@15.4.6/dist/sql-formatter.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
     <script>
         /* ========== NAVIGATION ========== */
         const pageTitles = {
@@ -1969,6 +2250,14 @@
             linux: 'root@penguin: ~/linux-commands',
             chmod: 'root@penguin: ~/chmod',
             format: 'root@penguin: ~/format-minify',
+            openapi: 'root@penguin: ~/openapi-swagger',
+            placeholder: 'root@penguin: ~/placeholder-img',
+            randomimg: 'root@penguin: ~/random-img',
+            laravel: 'root@penguin: ~/laravel-snippets',
+            phpsnip: 'root@penguin: ~/php-snippets',
+            kali: 'root@penguin: ~/kali-tools',
+            sanitize: 'root@penguin: ~/script-sanitizer',
+            mdpreview: 'root@penguin: ~/markdown-preview',
         };
 
         function showPage(id, btn) {
@@ -1989,6 +2278,12 @@
             if (id === 'barcode') genBarcode();
             if (id === 'fakerest') genFakeRest();
             if (id === 'format') fmtUpdateHint();
+            if (id === 'laravel' && !document.getElementById('laravel-list').innerHTML) filterLaravel();
+            if (id === 'phpsnip' && !document.getElementById('php-list').innerHTML) filterPhpSnip();
+            if (id === 'kali' && !document.getElementById('kali-list').innerHTML) filterKali();
+            if (id === 'placeholder') genPlaceholder();
+            if (id === 'randomimg') genRandomImg();
+            if (id === 'mdpreview') runMdPreview();
         }
 
         /* ========== FORMAT / VALIDATE / MINIFY ========== */
@@ -2358,6 +2653,351 @@
         }
 
         fmtUpdateHint();
+
+        /* ========== OPENAPI / SWAGGER ========== */
+        const OPENAPI_PETSTORE = '{"openapi":"3.0.1","info":{"title":"Swagger Petstore","version":"1.0.0"},"servers":[{"url":"https://petstore3.swagger.io/api/v3"}],"paths":{"/pet/findByStatus":{"get":{"summary":"Finds Pets by status","parameters":[{"name":"status","in":"query","schema":{"type":"string","enum":["available","pending","sold"]}}],"responses":{"200":{"description":"OK"}}}}}}';
+
+        function openapiSetStatus(msg, ok) {
+            const el = document.getElementById('openapi-status');
+            el.textContent = msg || '';
+            el.style.color = ok ? '#27c93f' : (msg && msg.startsWith('Error') ? '#ff5f56' : '#666');
+        }
+
+        function openapiLoadExample() {
+            document.getElementById('openapi-spec').value = JSON.stringify(JSON.parse(OPENAPI_PETSTORE), null, 2);
+            openapiSetStatus('Loaded Petstore minimal example.', true);
+        }
+
+        function openapiParseSpec(raw) {
+            const t = raw.trim();
+            if (!t) throw new Error('Empty specification');
+            try {
+                return JSON.parse(t);
+            } catch {
+                const yamlApi = window.jsyaml;
+                if (!yamlApi || typeof yamlApi.load !== 'function') throw new Error('Invalid JSON and YAML parser missing');
+                const spec = yamlApi.load(t);
+                if (!spec || typeof spec !== 'object') throw new Error('YAML did not parse to an object');
+                return spec;
+            }
+        }
+
+        async function renderOpenApi() {
+            const mount = document.getElementById('swagger-ui-mount');
+            const raw = document.getElementById('openapi-spec').value;
+            if (!window.SwaggerUIBundle) {
+                openapiSetStatus('Loading Swagger UI…', false);
+                await new Promise((resolve, reject) => {
+                    const l = document.createElement('link');
+                    l.rel = 'stylesheet';
+                    l.href = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css';
+                    l.onload = resolve;
+                    l.onerror = () => reject(new Error('Failed to load Swagger UI CSS'));
+                    document.head.appendChild(l);
+                });
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js';
+                    s.onload = resolve;
+                    s.onerror = () => reject(new Error('Failed to load Swagger UI'));
+                    document.body.appendChild(s);
+                });
+            }
+            let spec;
+            try {
+                spec = openapiParseSpec(raw);
+            } catch (e) {
+                openapiSetStatus('Error: ' + (e.message || e), false);
+                return;
+            }
+            mount.innerHTML = '';
+            const UIB = window.SwaggerUIBundle;
+            if (!UIB) {
+                openapiSetStatus('Error: SwaggerUIBundle not found after loading script.', false);
+                return;
+            }
+            try {
+                UIB({
+                    dom_id: '#swagger-ui-mount',
+                    spec,
+                    deepLinking: false,
+                });
+                openapiSetStatus('Swagger UI rendered.', true);
+            } catch (e) {
+                openapiSetStatus('Error: ' + (e.message || e), false);
+            }
+        }
+
+        /* ========== PLACEHOLDER IMAGES ========== */
+        function genPlaceholder() {
+            const w = Math.max(16, Math.min(4000, parseInt(document.getElementById('ph-w').value, 10) || 600));
+            const h = Math.max(16, Math.min(4000, parseInt(document.getElementById('ph-h').value, 10) || 400));
+            const bg = (document.getElementById('ph-bg').value || '1a1a1a').replace(/[^0-9a-fA-F]/g, '').slice(0, 6) || '1a1a1a';
+            const fg = (document.getElementById('ph-fg').value || '00ff41').replace(/[^0-9a-fA-F]/g, '').slice(0, 6) || '00ff41';
+            const txt = encodeURIComponent(document.getElementById('ph-txt').value || 'Penguin');
+            const url = `https://placehold.co/${w}x${h}/${bg}/${fg}/png?text=${txt}`;
+            document.getElementById('ph-url').innerText = url;
+            const img = document.getElementById('ph-img');
+            img.src = url;
+            img.style.display = 'block';
+        }
+
+        /* ========== RANDOM IMAGE (LOREM FLICKR) ========== */
+        let rfNonce = 0;
+
+        function genRandomImg(newRandom) {
+            if (newRandom) rfNonce += 1;
+            const w = Math.max(100, Math.min(1920, parseInt(document.getElementById('rf-w').value, 10) || 640));
+            const h = Math.max(100, Math.min(1920, parseInt(document.getElementById('rf-h').value, 10) || 480));
+            const cat = (document.getElementById('rf-cat').value || 'nature').trim().replace(/[^a-z0-9_-]/gi, '') || 'nature';
+            const url = `https://loremflickr.com/${w}/${h}/${encodeURIComponent(cat)}?lock=${rfNonce}`;
+            document.getElementById('rf-url').innerText = url;
+            const img = document.getElementById('rf-img');
+            img.src = url;
+            img.style.display = 'block';
+        }
+
+        /* ========== SNIPPET LISTS (LARAVEL / PHP / KALI) ========== */
+        function clipSnippetData(el, notifyId) {
+            const enc = el.getAttribute('data-copy');
+            if (!enc) return;
+            const text = decodeURIComponent(enc);
+            const defMsg = { 'laravel-notify': 'Click any snippet to copy', 'php-notify': 'Click any snippet to copy', 'kali-notify': 'Click any command to copy' }[notifyId] || 'Click to copy';
+            navigator.clipboard.writeText(text).then(() => {
+                const n = document.getElementById(notifyId);
+                if (n) {
+                    n.innerText = '\u2713 COPIED';
+                    n.style.color = 'var(--neon)';
+                    setTimeout(() => {
+                        n.innerText = defMsg;
+                        n.style.color = '#444';
+                    }, 1500);
+                }
+            });
+        }
+
+        function escSnippetHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function renderSnippetCards(listId, countId, cmds, total, notifyId) {
+            const list = document.getElementById(listId);
+            document.getElementById(countId).innerText = `SHOWING ${cmds.length} OF ${total}`;
+            if (!cmds.length) {
+                list.innerHTML = '<div style="color:#444;padding:20px;text-align:center">No results</div>';
+                return;
+            }
+            list.innerHTML = cmds.map(c => {
+                const enc = encodeURIComponent(c.example);
+                return `<div class="lx-card" data-copy="${enc}" onclick="clipSnippetData(this,'${notifyId}')">
+                <div class="lx-head">
+                    <span class="lx-name">${escSnippetHtml(c.name)}</span>
+                    <span class="lx-tag">${escSnippetHtml(c.cat)}</span>
+                </div>
+                <div class="lx-desc">${escSnippetHtml(c.desc)}</div>
+                <div class="lx-example">${escSnippetHtml(c.example)}</div>
+            </div>`;
+            }).join('');
+        }
+
+        const LARAVEL_SNIPPETS = [
+            { name: 'Fresh migrate + seed', desc: 'Reset DB and run seeders', example: 'php artisan migrate:fresh --seed', cat: 'artisan' },
+            { name: 'Optimize production', desc: 'Cache config, routes, views', example: 'php artisan optimize', cat: 'artisan' },
+            { name: 'Clear caches', desc: 'Clear all Laravel caches', example: 'php artisan optimize:clear', cat: 'artisan' },
+            { name: 'Queue work', desc: 'Process queue jobs', example: 'php artisan queue:work --tries=3', cat: 'queues' },
+            { name: 'Horizon', desc: 'Laravel Horizon dashboard', example: 'php artisan horizon', cat: 'queues' },
+            { name: 'Make model + migration', desc: 'Scaffold model', example: 'php artisan make:model Post -mfs', cat: 'artisan' },
+            { name: 'Route list', desc: 'List registered routes', example: 'php artisan route:list', cat: 'routes' },
+            { name: 'Named route URL', desc: 'Generate URL in PHP', example: "route('profile.show', ['user' => $user])", cat: 'routes' },
+            { name: 'Named route URL (Blade)', desc: 'In Blade templates', example: "{{ route('home') }}", cat: 'blade' },
+            { name: 'Asset URL', desc: 'Versioned asset', example: "{{ asset('js/app.js') }}", cat: 'blade' },
+            { name: 'CSRF field', desc: 'Form CSRF token', example: '@csrf', cat: 'blade' },
+            { name: 'Eloquent find', desc: 'Find by primary key', example: '$user = User::find($id);', cat: 'eloquent' },
+            { name: 'Eloquent firstOrFail', desc: '404 if missing', example: '$post = Post::where("slug", $slug)->firstOrFail();', cat: 'eloquent' },
+            { name: 'Mass assignment', desc: 'Create with fillable', example: 'User::create($request->validated());', cat: 'eloquent' },
+            { name: 'Eager load', desc: 'N+1 prevention', example: '$posts = Post::with("author")->get();', cat: 'eloquent' },
+            { name: 'Middleware alias', desc: 'routes/web.php', example: "Route::middleware(['auth'])->group(function () { ... });", cat: 'middleware' },
+            { name: 'Rate limit', desc: 'Throttle middleware', example: "Route::middleware('throttle:60,1')->group(...);", cat: 'middleware' },
+            { name: 'env()', desc: 'Read config from env', example: "env('APP_DEBUG', false)", cat: 'config' },
+            { name: 'config()', desc: 'Cached config', example: "config('app.name')", cat: 'config' },
+            { name: 'Feature test', desc: 'HTTP test', example: '$this->get("/")->assertOk();', cat: 'testing' },
+            { name: 'RefreshDatabase', desc: 'Trait for tests', example: 'use RefreshDatabase;', cat: 'testing' },
+            { name: 'Tinker', desc: 'REPL', example: 'php artisan tinker', cat: 'artisan' },
+            { name: 'Storage link', desc: 'Public disk symlink', example: 'php artisan storage:link', cat: 'artisan' },
+            { name: 'Schedule', desc: 'routes/console.php or Kernel', example: "Schedule::command('inspire')->hourly();", cat: 'artisan' },
+        ];
+
+        const PHP_SNIPPETS = [
+            { name: 'Nullsafe', desc: 'PHP 8+', example: '$country = $user?->address?->country;', cat: 'syntax' },
+            { name: 'Match', desc: 'Match expression', example: "echo match($x) { 1 => 'a', 2 => 'b', default => 'c' };", cat: 'syntax' },
+            { name: 'Named arguments', desc: 'PHP 8+', example: 'htmlspecialchars(string: $s, flags: ENT_QUOTES);', cat: 'syntax' },
+            { name: 'Readonly class', desc: 'PHP 8.2+', example: 'readonly class UserDTO { public function __construct(public string $name) {} }', cat: 'types' },
+            { name: 'Enum', desc: 'Backed enum', example: "enum Status: string { case Draft = 'draft'; case Published = 'published'; }", cat: 'types' },
+            { name: 'Array destructuring', desc: 'List assignment', example: '[$a, $b] = [1, 2];', cat: 'arrays' },
+            { name: 'Spread array', desc: 'Unpack', example: '$x = [...$a, ...$b];', cat: 'arrays' },
+            { name: 'str_contains', desc: 'PHP 8+', example: "str_contains($haystack, 'needle');", cat: 'strings' },
+            { name: 'str_starts_with', desc: 'PHP 8+', example: "str_starts_with($path, '/api');", cat: 'strings' },
+            { name: 'PDO connect', desc: 'Prepared statement', example: '$pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);', cat: 'pdo' },
+            { name: 'PDO fetch', desc: 'Assoc rows', example: '$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?"); $stmt->execute([$id]); $row = $stmt->fetch(PDO::FETCH_ASSOC);', cat: 'pdo' },
+            { name: 'Try / catch', desc: 'Exceptions', example: 'try { ... } catch (Throwable $e) { logger()->error($e->getMessage()); }', cat: 'errors' },
+            { name: 'Custom exception', desc: 'Domain exception', example: 'throw new InvalidArgumentException("Invalid");', cat: 'errors' },
+            { name: 'declare strict_types', desc: 'File header', example: 'declare(strict_types=1);', cat: 'syntax' },
+            { name: 'Laravel env check', desc: 'Production guard', example: "if (app()->environment('local')) { ... }", cat: 'laravel' },
+            { name: 'Laravel abort', desc: 'HTTP error', example: "abort(404, 'Not found');", cat: 'laravel' },
+            { name: 'Laravel response JSON', desc: 'API response', example: 'return response()->json(["ok" => true]);', cat: 'laravel' },
+            { name: 'Carbon now', desc: 'Common in Laravel', example: '$now = now();', cat: 'laravel' },
+            { name: 'Type hint', desc: 'Union types', example: 'function foo(int|string $id): ?User { ... }', cat: 'types' },
+        ];
+
+        const KALI_CMDS = [
+            { name: 'apt update', desc: 'Refresh package lists', example: 'sudo apt update && sudo apt full-upgrade -y', cat: 'setup' },
+            { name: 'kali-linux-default', desc: 'Meta-package (tools)', example: 'sudo apt install -y kali-linux-default', cat: 'setup' },
+            { name: 'kali-undercover', desc: 'Windows-like UI', example: 'kali-undercover', cat: 'setup' },
+            { name: 'kali-tweaks', desc: 'GUI tweaks', example: 'kali-tweaks', cat: 'setup' },
+            { name: 'nmap quick', desc: 'Fast TCP scan', example: 'nmap -sV -T4 -p- target.com', cat: 'scan' },
+            { name: 'nmap scripts', desc: 'Default NSE', example: 'nmap -sC -sV -p 80,443 target.com', cat: 'scan' },
+            { name: 'masscan', desc: 'High-speed port scan', example: 'masscan 10.0.0.0/24 -p80,443 --rate=1000', cat: 'scan' },
+            { name: 'nikto', desc: 'Web server scan', example: 'nikto -h https://target.com -ssl', cat: 'web' },
+            { name: 'dirb', desc: 'Directory brute-forcer', example: 'dirb https://target.com /usr/share/wordlists/dirb/common.txt', cat: 'web' },
+            { name: 'sqlmap', desc: 'SQL injection', example: "sqlmap -u 'https://target.com/page?id=1' --batch", cat: 'web' },
+            { name: 'wpscan', desc: 'WordPress scan', example: 'wpscan --url https://target.com --enumerate vp', cat: 'web' },
+            { name: 'airmon-ng', desc: 'Monitor mode', example: 'sudo airmon-ng start wlan0', cat: 'wifi' },
+            { name: 'airodump-ng', desc: 'Capture WiFi', example: 'sudo airodump-ng wlan0mon', cat: 'wifi' },
+            { name: 'airodump-ng (fixed)', desc: 'Target BSSID', example: 'sudo airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF wlan0mon', cat: 'wifi' },
+            { name: 'reaver', desc: 'WPS attack', example: 'sudo reaver -i wlan0mon -b AA:BB:CC:DD:EE:FF -vv', cat: 'wifi' },
+            { name: 'wireshark', desc: 'GUI capture', example: 'wireshark', cat: 'wifi' },
+            { name: 'msfconsole', desc: 'Metasploit', example: 'msfconsole -q', cat: 'exploit' },
+            { name: 'searchsploit', desc: 'ExploitDB search', example: 'searchsploit apache 2.4', cat: 'exploit' },
+            { name: 'hydra', desc: 'Brute-force', example: 'hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://target', cat: 'exploit' },
+            { name: 'burpsuite', desc: 'Web proxy', example: 'burpsuite &', cat: 'web' },
+            { name: 'john', desc: 'Password cracking', example: 'john --wordlist=/usr/share/wordlists/rockyou.txt hashes.txt', cat: 'password' },
+            { name: 'hashcat', desc: 'GPU cracking', example: 'hashcat -m 0 -a 0 hashes.txt wordlist.txt', cat: 'password' },
+            { name: 'hashid', desc: 'Identify hash type', example: 'hashid hash.txt', cat: 'password' },
+            { name: 'volatility', desc: 'Memory forensics', example: 'volatility -f memory.dump windows.pslist', cat: 'forensics' },
+            { name: 'autopsy', desc: 'Disk forensics GUI', example: 'autopsy &', cat: 'forensics' },
+            { name: 'binwalk', desc: 'Firmware analysis', example: 'binwalk -e firmware.bin', cat: 'forensics' },
+            { name: 'foremost', desc: 'File carving', example: 'foremost -i disk.img -o out/', cat: 'forensics' },
+            { name: 'maltego', desc: 'OSINT graph', example: 'maltego', cat: 'reporting' },
+            { name: 'recon-ng', desc: 'Web recon framework', example: 'recon-ng', cat: 'reporting' },
+            { name: 'theHarvester', desc: 'Email / subdomain OSINT', example: 'theHarvester -d target.com -b google', cat: 'reporting' },
+            { name: 'netdiscover', desc: 'ARP scan LAN', example: 'sudo netdiscover -r 192.168.1.0/24', cat: 'scan' },
+            { name: 'responder', desc: 'LLMNR/NBT-NS poison', example: 'sudo responder -I eth0', cat: 'exploit' },
+        ];
+
+        let currentLaravelCat = 'all';
+        let currentPhpCat = 'all';
+        let currentKaliCat = 'all';
+
+        function filterLaravel() {
+            const q = document.getElementById('laravel-search').value.toLowerCase();
+            let filtered = LARAVEL_SNIPPETS;
+            if (currentLaravelCat !== 'all') filtered = filtered.filter(c => c.cat === currentLaravelCat);
+            if (q) filtered = filtered.filter(c => c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q) || c.cat.includes(q) || c.example.toLowerCase().includes(q));
+            renderSnippetCards('laravel-list', 'laravel-count', filtered, LARAVEL_SNIPPETS.length, 'laravel-notify');
+        }
+
+        function filterLaravelCat(cat, btn) {
+            currentLaravelCat = cat;
+            document.querySelectorAll('#laravel-cats button').forEach(b => b.classList.remove('lx-cat-active'));
+            if (btn) btn.classList.add('lx-cat-active');
+            document.getElementById('laravel-search').value = '';
+            filterLaravel();
+        }
+
+        function filterPhpSnip() {
+            const q = document.getElementById('php-search').value.toLowerCase();
+            let filtered = PHP_SNIPPETS;
+            if (currentPhpCat !== 'all') filtered = filtered.filter(c => c.cat === currentPhpCat);
+            if (q) filtered = filtered.filter(c => c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q) || c.cat.includes(q) || c.example.toLowerCase().includes(q));
+            renderSnippetCards('php-list', 'php-count', filtered, PHP_SNIPPETS.length, 'php-notify');
+        }
+
+        function filterPhpSnipCat(cat, btn) {
+            currentPhpCat = cat;
+            document.querySelectorAll('#php-cats button').forEach(b => b.classList.remove('lx-cat-active'));
+            if (btn) btn.classList.add('lx-cat-active');
+            document.getElementById('php-search').value = '';
+            filterPhpSnip();
+        }
+
+        function filterKali() {
+            const q = document.getElementById('kali-search').value.toLowerCase();
+            let filtered = KALI_CMDS;
+            if (currentKaliCat !== 'all') filtered = filtered.filter(c => c.cat === currentKaliCat);
+            if (q) filtered = filtered.filter(c => c.name.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q) || c.cat.includes(q) || c.example.toLowerCase().includes(q));
+            renderSnippetCards('kali-list', 'kali-count', filtered, KALI_CMDS.length, 'kali-notify');
+        }
+
+        function filterKaliCat(cat, btn) {
+            currentKaliCat = cat;
+            document.querySelectorAll('#kali-cats button').forEach(b => b.classList.remove('lx-cat-active'));
+            if (btn) btn.classList.add('lx-cat-active');
+            document.getElementById('kali-search').value = '';
+            filterKali();
+        }
+
+        /* ========== SCRIPT SANITIZER ========== */
+        function runSan() {
+            const mode = document.getElementById('san-mode').value;
+            const input = document.getElementById('san-in').value;
+            const out = document.getElementById('san-out');
+            if (!input) { out.value = ''; return; }
+            if (mode === 'html') {
+                out.value = input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                return;
+            }
+            if (mode === 'attr') {
+                out.value = input.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return;
+            }
+            if (mode === 'strip') {
+                out.value = input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+                return;
+            }
+            if (mode === 'shell') {
+                out.value = "'" + input.replace(/'/g, "'\\''") + "'";
+                return;
+            }
+            if (mode === 'js') {
+                out.value = input.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+                return;
+            }
+            if (mode === 'all') {
+                let s = input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                s = s.replace(/on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+                out.value = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+        }
+
+        function sanCopy() {
+            const t = document.getElementById('san-out').value;
+            if (!t) return;
+            navigator.clipboard.writeText(t).then(() => {
+                const n = document.getElementById('san-notify');
+                n.textContent = '\u2713 COPIED';
+                n.style.color = 'var(--neon)';
+                setTimeout(() => {
+                    n.textContent = 'Sanitization is best-effort; review output before use';
+                    n.style.color = '#444';
+                }, 1500);
+            });
+        }
+
+        /* ========== MARKDOWN PREVIEW ========== */
+        function runMdPreview() {
+            const raw = document.getElementById('md-in').value;
+            const el = document.getElementById('md-out');
+            if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') {
+                el.innerHTML = '<p style="color:#ff5f56">marked.js or DOMPurify failed to load.</p>';
+                return;
+            }
+            if (!raw.trim()) { el.innerHTML = '<p style="color:#666">Preview appears here.</p>'; return; }
+            if (typeof marked.parse === 'function') {
+                el.innerHTML = DOMPurify.sanitize(marked.parse(raw));
+            } else {
+                el.innerHTML = DOMPurify.sanitize(marked(raw));
+            }
+        }
 
         /* ========== MOBILE SIDEBAR ========== */
         function toggleSidebar() {

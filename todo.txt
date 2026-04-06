@@ -1,7 +1,0 @@
-Open API / Swagger
-Image Placeholder
-Image Randorm by Category
-Laravel Snippets
-PHP Snippets
-Kali Linux Security commands
-Script Sanitizer
