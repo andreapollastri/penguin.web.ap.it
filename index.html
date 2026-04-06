@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0d0d0d">
     <meta name="description"
         content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, OpenAPI/Swagger, placeholder and random images, Laravel/PHP/Kali snippets, script sanitizer, Markdown preview, code format/minify, fake REST API, cron, timestamp, cURL, and more. No signup required.">
     <title>Penguin — Generators and utilities for developers</title>
@@ -29,10 +30,12 @@
         body {
             background: var(--bg);
             color: var(--neon);
-            font-family: 'Fira Code', 'Courier New', monospace;
+            font-family: ui-monospace, 'Cascadia Code', 'SF Mono', 'Fira Code', 'Consolas', monospace;
             height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             display: flex;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
         /* ===== SIDEBAR ===== */
@@ -70,7 +73,22 @@
         .sidebar-nav {
             flex: 1;
             overflow-y: auto;
-            padding: 12px 0;
+            overflow-x: hidden;
+            padding: 8px 0 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .nav-section {
+            margin-bottom: 6px;
+        }
+
+        .nav-section-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            color: #3a3a3a;
+            padding: 10px 20px 6px;
+            font-weight: 600;
         }
 
         .sidebar-nav button {
@@ -84,6 +102,7 @@
             font-family: inherit;
             font-size: 12px;
             padding: 11px 20px;
+            min-height: 40px;
             cursor: pointer;
             text-align: left;
             transition: 0.15s;
@@ -142,6 +161,39 @@
             color: #666;
             text-transform: uppercase;
             letter-spacing: 2px;
+            word-break: break-all;
+            line-height: 1.35;
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .topbar-link {
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            color: #888;
+            font-family: inherit;
+            font-size: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: 0.15s;
+            min-height: 40px;
+            min-width: 40px;
+        }
+
+        .topbar-link:hover {
+            border-color: var(--neon);
+            color: var(--neon);
+        }
+
+        .topbar-link:active {
+            transform: scale(0.98);
         }
 
         .topbar .dots span {
@@ -167,11 +219,15 @@
         .content-area {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             background: var(--main);
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         .content {
             max-width: 800px;
+            margin: 0 auto;
             padding: 40px 50px 60px;
         }
 
@@ -458,15 +514,17 @@
 
         @media (max-width: 768px) {
             :root {
-                --sidebar-w: 260px;
+                --sidebar-w: min(88vw, 300px);
             }
 
             .sidebar {
                 position: fixed;
                 left: calc(-1 * var(--sidebar-w));
                 top: 0;
+                bottom: 0;
                 z-index: 100;
                 transition: left 0.25s ease;
+                box-shadow: 8px 0 32px rgba(0, 0, 0, 0.45);
             }
 
             .sidebar.open {
@@ -477,8 +535,9 @@
                 display: none;
                 position: fixed;
                 inset: 0;
-                background: rgba(0, 0, 0, 0.6);
+                background: rgba(0, 0, 0, 0.65);
                 z-index: 99;
+                backdrop-filter: blur(2px);
             }
 
             .sidebar-overlay.open {
@@ -486,16 +545,52 @@
             }
 
             .menu-toggle {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 44px;
+                min-height: 44px;
+                padding: 0 12px;
+            }
+
+            .topbar {
+                padding: 12px 16px;
+                gap: 8px;
+            }
+
+            .topbar .page-title {
+                font-size: 10px;
+                letter-spacing: 1px;
             }
 
             .content {
-                padding: 25px 20px 40px;
+                padding: 20px 16px 48px;
+            }
+
+            .sidebar-nav button {
+                min-height: 46px;
+                padding: 12px 18px;
+                font-size: 13px;
+            }
+
+            .nav-section-label {
+                padding: 12px 18px 8px;
             }
 
             .val {
-                font-size: 1.4rem;
+                font-size: 1.35rem;
                 letter-spacing: 2px;
+            }
+
+            input,
+            select,
+            textarea {
+                font-size: 1rem;
+            }
+
+            .btn {
+                min-height: 44px;
+                padding: 12px 18px;
             }
 
             .cron-fields {
@@ -986,6 +1081,16 @@
             font-weight: normal;
             margin-right: 6px;
         }
+
+        @media (prefers-reduced-motion: reduce) {
+            .sidebar {
+                transition: none !important;
+            }
+
+            .content-area {
+                scroll-behavior: auto;
+            }
+        }
     </style>
 </head>
 
@@ -1000,48 +1105,66 @@
             <div class="logo">&#x1F427; PENGUIN</div>
             <div class="sub">Developer Generators</div>
         </div>
-        <nav class="sidebar-nav">
-            <button class="active" onclick="showPage('password', this)"><span class="icon">&gt;</span> Password</button>
-            <button onclick="showPage('username', this)"><span class="icon">&gt;</span> Username</button>
-            <button onclick="showPage('bcrypt', this)"><span class="icon">&gt;</span> Bcrypt</button>
-            <button onclick="showPage('appkey', this)"><span class="icon">&gt;</span> APP_KEY</button>
-            <button onclick="showPage('hash', this)"><span class="icon">&gt;</span> Hash</button>
-            <button onclick="showPage('jwt', this)"><span class="icon">&gt;</span> JWT</button>
-            <button onclick="showPage('uuid', this)"><span class="icon">&gt;</span> UUID</button>
-            <button onclick="showPage('jsonld', this)"><span class="icon">&gt;</span> JSON-LD</button>
-            <button onclick="showPage('fakeid', this)"><span class="icon">&gt;</span> Fake ID</button>
-            <button onclick="showPage('base64', this)"><span class="icon">&gt;</span> Base64</button>
-            <button onclick="showPage('urlparse', this)"><span class="icon">&gt;</span> URL Parse</button>
-            <button onclick="showPage('qrcode', this)"><span class="icon">&gt;</span> QR Code</button>
-            <button onclick="showPage('barcode', this)"><span class="icon">&gt;</span> Barcode</button>
-            <button onclick="showPage('slug', this)"><span class="icon">&gt;</span> Slug</button>
-            <button onclick="showPage('crontab', this)"><span class="icon">&gt;</span> Crontab</button>
-            <button onclick="showPage('timestamp', this)"><span class="icon">&gt;</span> Timestamp</button>
-            <button onclick="showPage('lorem', this)"><span class="icon">&gt;</span> Lorem</button>
-            <button onclick="showPage('curl', this)"><span class="icon">&gt;</span> cURL</button>
-            <button onclick="showPage('fakerest', this)"><span class="icon">&gt;</span> Fake REST</button>
-            <button onclick="showPage('sql', this)"><span class="icon">&gt;</span> SQL</button>
-            <button onclick="showPage('linux', this)"><span class="icon">&gt;</span> Linux</button>
-            <button onclick="showPage('chmod', this)"><span class="icon">&gt;</span> Chmod</button>
-            <button onclick="showPage('format', this)"><span class="icon">&gt;</span> Format / Minify</button>
-            <button onclick="showPage('openapi', this)"><span class="icon">&gt;</span> OpenAPI / Swagger</button>
-            <button onclick="showPage('placeholder', this)"><span class="icon">&gt;</span> Placeholder IMG</button>
-            <button onclick="showPage('randomimg', this)"><span class="icon">&gt;</span> Random IMG</button>
-            <button onclick="showPage('laravel', this)"><span class="icon">&gt;</span> Laravel</button>
-            <button onclick="showPage('phpsnip', this)"><span class="icon">&gt;</span> PHP snippets</button>
-            <button onclick="showPage('kali', this)"><span class="icon">&gt;</span> Kali</button>
-            <button onclick="showPage('sanitize', this)"><span class="icon">&gt;</span> Script sanitizer</button>
-            <button onclick="showPage('mdpreview', this)"><span class="icon">&gt;</span> MD preview</button>
-            <button onclick="showPage('sitemap', this)"><span class="icon">&gt;</span> Sitemap</button>
-            <button onclick="showPage('socialmeta', this)"><span class="icon">&gt;</span> OG / Twitter</button>
-            <button onclick="showPage('favicon', this)"><span class="icon">&gt;</span> Favicon</button>
-            <button onclick="showPage('cssmedia', this)"><span class="icon">&gt;</span> CSS media</button>
-            <button onclick="showPage('svgicons', this)"><span class="icon">&gt;</span> SVG icons</button>
-            <button onclick="showPage('speedtest', this)"><span class="icon">&gt;</span> Speed test</button>
-            <button onclick="showPage('perfcheck', this)"><span class="icon">&gt;</span> Performance</button>
-            <button onclick="showPage('onlinecheck', this)"><span class="icon">&gt;</span> Online check</button>
-            <button onclick="showPage('portcheck', this)"><span class="icon">&gt;</span> Port check</button>
-            <button onclick="showPage('hostdns', this)"><span class="icon">&gt;</span> Host / DNS</button>
+        <nav class="sidebar-nav" aria-label="Tools">
+            <div class="nav-section">
+                <div class="nav-section-label">Crypto &amp; secrets</div>
+                <button type="button" class="active" data-page="password" onclick="showPage('password', this)"><span class="icon">&gt;</span> Password</button>
+                <button type="button" data-page="username" onclick="showPage('username', this)"><span class="icon">&gt;</span> Username</button>
+                <button type="button" data-page="bcrypt" onclick="showPage('bcrypt', this)"><span class="icon">&gt;</span> Bcrypt</button>
+                <button type="button" data-page="appkey" onclick="showPage('appkey', this)"><span class="icon">&gt;</span> APP_KEY</button>
+                <button type="button" data-page="hash" onclick="showPage('hash', this)"><span class="icon">&gt;</span> Hash</button>
+                <button type="button" data-page="jwt" onclick="showPage('jwt', this)"><span class="icon">&gt;</span> JWT</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Encoding &amp; IDs</div>
+                <button type="button" data-page="uuid" onclick="showPage('uuid', this)"><span class="icon">&gt;</span> UUID</button>
+                <button type="button" data-page="jsonld" onclick="showPage('jsonld', this)"><span class="icon">&gt;</span> JSON-LD</button>
+                <button type="button" data-page="fakeid" onclick="showPage('fakeid', this)"><span class="icon">&gt;</span> Fake ID</button>
+                <button type="button" data-page="base64" onclick="showPage('base64', this)"><span class="icon">&gt;</span> Base64</button>
+                <button type="button" data-page="slug" onclick="showPage('slug', this)"><span class="icon">&gt;</span> Slug</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">URLs &amp; media</div>
+                <button type="button" data-page="urlparse" onclick="showPage('urlparse', this)"><span class="icon">&gt;</span> URL Parse</button>
+                <button type="button" data-page="qrcode" onclick="showPage('qrcode', this)"><span class="icon">&gt;</span> QR Code</button>
+                <button type="button" data-page="barcode" onclick="showPage('barcode', this)"><span class="icon">&gt;</span> Barcode</button>
+                <button type="button" data-page="placeholder" onclick="showPage('placeholder', this)"><span class="icon">&gt;</span> Placeholder IMG</button>
+                <button type="button" data-page="randomimg" onclick="showPage('randomimg', this)"><span class="icon">&gt;</span> Random IMG</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Text &amp; APIs</div>
+                <button type="button" data-page="crontab" onclick="showPage('crontab', this)"><span class="icon">&gt;</span> Crontab</button>
+                <button type="button" data-page="timestamp" onclick="showPage('timestamp', this)"><span class="icon">&gt;</span> Timestamp</button>
+                <button type="button" data-page="lorem" onclick="showPage('lorem', this)"><span class="icon">&gt;</span> Lorem</button>
+                <button type="button" data-page="curl" onclick="showPage('curl', this)"><span class="icon">&gt;</span> cURL</button>
+                <button type="button" data-page="fakerest" onclick="showPage('fakerest', this)"><span class="icon">&gt;</span> Fake REST</button>
+                <button type="button" data-page="format" onclick="showPage('format', this)"><span class="icon">&gt;</span> Format / Minify</button>
+                <button type="button" data-page="openapi" onclick="showPage('openapi', this)"><span class="icon">&gt;</span> OpenAPI / Swagger</button>
+                <button type="button" data-page="sanitize" onclick="showPage('sanitize', this)"><span class="icon">&gt;</span> Script sanitizer</button>
+                <button type="button" data-page="mdpreview" onclick="showPage('mdpreview', this)"><span class="icon">&gt;</span> MD preview</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">System &amp; snippets</div>
+                <button type="button" data-page="sql" onclick="showPage('sql', this)"><span class="icon">&gt;</span> SQL</button>
+                <button type="button" data-page="linux" onclick="showPage('linux', this)"><span class="icon">&gt;</span> Linux</button>
+                <button type="button" data-page="chmod" onclick="showPage('chmod', this)"><span class="icon">&gt;</span> Chmod</button>
+                <button type="button" data-page="laravel" onclick="showPage('laravel', this)"><span class="icon">&gt;</span> Laravel</button>
+                <button type="button" data-page="phpsnip" onclick="showPage('phpsnip', this)"><span class="icon">&gt;</span> PHP snippets</button>
+                <button type="button" data-page="kali" onclick="showPage('kali', this)"><span class="icon">&gt;</span> Kali</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-section-label">Web &amp; network</div>
+                <button type="button" data-page="sitemap" onclick="showPage('sitemap', this)"><span class="icon">&gt;</span> Sitemap</button>
+                <button type="button" data-page="socialmeta" onclick="showPage('socialmeta', this)"><span class="icon">&gt;</span> OG / Twitter</button>
+                <button type="button" data-page="favicon" onclick="showPage('favicon', this)"><span class="icon">&gt;</span> Favicon</button>
+                <button type="button" data-page="cssmedia" onclick="showPage('cssmedia', this)"><span class="icon">&gt;</span> CSS media</button>
+                <button type="button" data-page="svgicons" onclick="showPage('svgicons', this)"><span class="icon">&gt;</span> SVG icons</button>
+                <button type="button" data-page="speedtest" onclick="showPage('speedtest', this)"><span class="icon">&gt;</span> Speed test</button>
+                <button type="button" data-page="perfcheck" onclick="showPage('perfcheck', this)"><span class="icon">&gt;</span> Performance</button>
+                <button type="button" data-page="onlinecheck" onclick="showPage('onlinecheck', this)"><span class="icon">&gt;</span> Online check</button>
+                <button type="button" data-page="portcheck" onclick="showPage('portcheck', this)"><span class="icon">&gt;</span> Port check</button>
+                <button type="button" data-page="hostdns" onclick="showPage('hostdns', this)"><span class="icon">&gt;</span> Host / DNS</button>
+            </div>
         </nav>
         <div class="sidebar-footer">Penguin · <a href="https://web.ap.it" target="_blank" rel="noopener"
                 style="color:#444;text-decoration:none">by @ndrea</a></div>
@@ -1050,11 +1173,14 @@
     <!-- MAIN -->
     <div class="main">
         <div class="topbar">
-            <div style="display:flex;align-items:center;gap:14px">
-                <button class="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
+            <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+                <button type="button" class="menu-toggle" onclick="toggleSidebar()" aria-label="Open menu">&#9776;</button>
                 <span class="page-title" id="page-title">root@penguin: ~/password</span>
             </div>
-            <div class="dots"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+            <div class="topbar-actions">
+                <button type="button" class="topbar-link" id="copy-page-link" onclick="copyCurrentToolLink()" title="Copy link to this tool" aria-label="Copy link #tool"># link</button>
+                <div class="dots" aria-hidden="true"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+            </div>
         </div>
 
         <div class="content-area">
@@ -2744,17 +2870,80 @@
             hostdns: 'root@penguin: ~/host-dns-lookup',
         };
 
-        function showPage(id, btn) {
+        function navButtonFor(id) {
+            return document.querySelector('.sidebar-nav button[data-page="' + id + '"]');
+        }
+
+        function copyCurrentToolLink() {
+            const id = window.__currentToolId || 'password';
+            const url = location.origin + location.pathname + location.search + '#' + id;
+            const btn = document.getElementById('copy-page-link');
+            const reset = () => { if (btn) btn.textContent = '# link'; };
+            const ok = () => {
+                if (btn) {
+                    btn.textContent = 'copied ✓';
+                    setTimeout(reset, 1600);
+                }
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(ok).catch(() => {
+                    try {
+                        const ta = document.createElement('textarea');
+                        ta.value = url;
+                        ta.style.position = 'fixed';
+                        ta.style.left = '-9999px';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                        ok();
+                    } catch (e) {
+                        if (btn) btn.textContent = 'copy failed';
+                        setTimeout(reset, 2000);
+                    }
+                });
+            } else {
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = url;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    ok();
+                } catch (e) {
+                    if (btn) btn.textContent = 'copy failed';
+                    setTimeout(reset, 2000);
+                }
+            }
+        }
+
+        function showPage(id, btn, opts) {
+            opts = opts || {};
             const pageEl = document.getElementById('page-' + id);
             if (!pageEl) {
                 console.error('Unknown page:', id);
                 return;
             }
+            window.__currentToolId = id;
+            document.title = 'Penguin · ' + id;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.sidebar-nav button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.sidebar-nav button').forEach(b => {
+                b.classList.remove('active');
+                b.removeAttribute('aria-current');
+            });
             pageEl.classList.add('active');
-            if (btn) btn.classList.add('active');
+            if (btn) {
+                btn.classList.add('active');
+                btn.setAttribute('aria-current', 'page');
+            }
             document.getElementById('page-title').innerText = pageTitles[id] || '';
+            const scrollMain = document.querySelector('.content-area');
+            if (scrollMain) scrollMain.scrollTop = 0;
+            if (!opts.skipHash && typeof history !== 'undefined' && history.replaceState) {
+                const h = '#' + id;
+                if (location.hash !== h) history.replaceState(null, '', h);
+            }
             closeSidebar();
 
             if (id === 'uuid' && document.getElementById('uuid-out').innerText === '----') genUUID();
@@ -2787,6 +2976,25 @@
             if (id === 'portcheck' && !document.getElementById('wt-port-snippet').value.trim()) wtPortFill();
             if (id === 'onlinecheck') wtOnlineNav();
         }
+
+        function initRouteFromHash() {
+            const raw = (location.hash || '').replace(/^#/, '').split(/[?&]/)[0];
+            const id = (raw && pageTitles[raw]) ? raw : 'password';
+            if (!location.hash || location.hash === '#' || !pageTitles[raw]) {
+                if (typeof history !== 'undefined' && history.replaceState) {
+                    history.replaceState(null, '', '#' + id);
+                }
+            }
+            showPage(id, navButtonFor(id), { skipHash: true });
+        }
+
+        window.addEventListener('hashchange', function () {
+            const raw = (location.hash || '').replace(/^#/, '').split(/[?&]/)[0];
+            if (!raw || !pageTitles[raw]) return;
+            showPage(raw, navButtonFor(raw), { skipHash: true });
+        });
+
+        initRouteFromHash();
 
         /* ========== FORMAT / VALIDATE / MINIFY ========== */
         function fmtIndentChar() {
