@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, cron, timestamp, cURL, and more. No signup required.">
+        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, fake REST API, cron, timestamp, cURL, and more. No signup required.">
     <title>Penguin — Generators and utilities for developers</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%90%A7</text></svg>">
@@ -733,6 +733,7 @@
             <button onclick="showPage('timestamp', this)"><span class="icon">&gt;</span> Timestamp</button>
             <button onclick="showPage('lorem', this)"><span class="icon">&gt;</span> Lorem</button>
             <button onclick="showPage('curl', this)"><span class="icon">&gt;</span> cURL</button>
+            <button onclick="showPage('fakerest', this)"><span class="icon">&gt;</span> Fake REST</button>
             <button onclick="showPage('sql', this)"><span class="icon">&gt;</span> SQL</button>
             <button onclick="showPage('linux', this)"><span class="icon">&gt;</span> Linux</button>
             <button onclick="showPage('chmod', this)"><span class="icon">&gt;</span> Chmod</button>
@@ -1348,6 +1349,53 @@
                     <div class="notify" id="curl-notify">Click command to copy</div>
                 </div>
 
+                <!-- FAKE REST API (MOCK URLS FOR TESTING) -->
+                <div id="page-fakerest" class="page">
+                    <div class="stat-bar">
+                        <span>PUBLIC MOCK / DEMO APIs</span>
+                        <span>THIRD-PARTY — USE FOR TESTS ONLY</span>
+                    </div>
+                    <div class="row" style="margin-bottom:5px">
+                        <div>
+                            <div class="label">Provider</div>
+                            <select id="fare-provider" onchange="fareLoadEndpoints()">
+                                <option value="jsonplaceholder">JSONPlaceholder</option>
+                                <option value="reqres">ReqRes</option>
+                                <option value="dummyjson">DummyJSON</option>
+                                <option value="fakestore">Fake Store</option>
+                                <option value="httpbin">HTTPBin</option>
+                                <option value="randomuser">RandomUser.me</option>
+                                <option value="pokeapi">PokéAPI</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="label">Endpoint</div>
+                            <select id="fare-endpoint" onchange="fareToggleIdRow(); genFakeRest();"></select>
+                        </div>
+                    </div>
+                    <div class="row" id="fare-id-row" style="display:none;margin-bottom:5px">
+                        <div>
+                            <div class="label">Resource id</div>
+                            <input type="number" id="fare-id" min="1" value="1" oninput="genFakeRest()">
+                        </div>
+                        <div style="display:flex;align-items:flex-end;padding-bottom:2px">
+                            <button type="button" class="btn" onclick="fareRandomId()">Random id</button>
+                        </div>
+                    </div>
+                    <div class="btn-row" style="margin-bottom:18px">
+                        <button type="button" class="btn" onclick="genFakeRest()">&#x21BB; Regenerate snippets</button>
+                    </div>
+                    <div class="label">Request URL</div>
+                    <div class="cmd-box" id="fare-url" onclick="clip('fare-url')">https://</div>
+                    <div class="label" style="margin-top:16px">cURL</div>
+                    <div class="cmd-box" id="fare-curl" onclick="clip('fare-curl')"
+                        style="white-space:pre-wrap;line-height:1.65;font-size:12px">curl -s</div>
+                    <div class="label" style="margin-top:16px">fetch (JavaScript)</div>
+                    <div class="cmd-box" id="fare-fetch" onclick="clip('fare-fetch')"
+                        style="white-space:pre-wrap;line-height:1.65;font-size:11px">fetch()</div>
+                    <div class="notify" id="fare-notify">Click any block to copy</div>
+                </div>
+
                 <!-- SQL QUERY GENERATOR -->
                 <div id="page-sql" class="page">
                     <div class="stat-bar">
@@ -1825,6 +1873,7 @@
             timestamp: 'root@penguin: ~/timestamp',
             lorem: 'root@penguin: ~/lorem',
             curl: 'root@penguin: ~/curl',
+            fakerest: 'root@penguin: ~/fake-rest-api',
             sql: 'root@penguin: ~/sql',
             linux: 'root@penguin: ~/linux-commands',
             chmod: 'root@penguin: ~/chmod',
@@ -1846,6 +1895,7 @@
             if (id === 'linux' && !document.getElementById('linux-list').innerHTML) filterLinux();
             if (id === 'qrcode') genQR();
             if (id === 'barcode') genBarcode();
+            if (id === 'fakerest') genFakeRest();
         }
 
         /* ========== MOBILE SIDEBAR ========== */
@@ -1870,7 +1920,8 @@
                 if (notif) {
                     notif.innerText = '\u2713 COPIED';
                     notif.style.color = 'var(--neon)';
-                    setTimeout(() => { notif.innerText = 'Click to copy'; notif.style.color = '#444'; }, 1500);
+                    const def = notif.id === 'fare-notify' ? 'Click any block to copy' : 'Click to copy';
+                    setTimeout(() => { notif.innerText = def; notif.style.color = '#444'; }, 1500);
                 }
             });
         }
@@ -2308,6 +2359,178 @@
                 document.getElementById('bc-notify').style.color = '#ff6b6b';
             }
         }
+
+        /* ========== FAKE REST API (MOCK URLS) ========== */
+        const REST_FAKE_APIS = {
+            jsonplaceholder: {
+                base: 'https://jsonplaceholder.typicode.com',
+                idMax: 10,
+                paths: [
+                    { path: '/posts', method: 'GET' },
+                    { path: '/posts/{{id}}', method: 'GET', needId: true },
+                    { path: '/users', method: 'GET' },
+                    { path: '/users/{{id}}', method: 'GET', needId: true },
+                    { path: '/comments', method: 'GET' },
+                    { path: '/comments?postId={{id}}', method: 'GET', needId: true },
+                    { path: '/albums', method: 'GET' },
+                    { path: '/photos', method: 'GET' },
+                    { path: '/todos', method: 'GET' },
+                    { path: '/todos/{{id}}', method: 'GET', needId: true },
+                ]
+            },
+            reqres: {
+                base: 'https://reqres.in/api',
+                idMax: 12,
+                paths: [
+                    { path: '/users', method: 'GET' },
+                    { path: '/users?page=2', method: 'GET' },
+                    { path: '/users/{{id}}', method: 'GET', needId: true },
+                    { path: '/users', method: 'POST', body: '{"name":"Alice","job":"developer"}' },
+                    { path: '/login', method: 'POST', body: '{"email":"eve.holt@reqres.in","password":"cityslicka"}' },
+                ]
+            },
+            dummyjson: {
+                base: 'https://dummyjson.com',
+                idMax: 100,
+                paths: [
+                    { path: '/products', method: 'GET' },
+                    { path: '/products/{{id}}', method: 'GET', needId: true },
+                    { path: '/users', method: 'GET' },
+                    { path: '/users/{{id}}', method: 'GET', needId: true },
+                    { path: '/quotes', method: 'GET' },
+                    { path: '/posts', method: 'GET' },
+                    { path: '/carts', method: 'GET' },
+                ]
+            },
+            fakestore: {
+                base: 'https://fakestoreapi.com',
+                idMax: 20,
+                paths: [
+                    { path: '/products', method: 'GET' },
+                    { path: '/products/{{id}}', method: 'GET', needId: true },
+                    { path: '/carts', method: 'GET' },
+                    { path: '/users', method: 'GET' },
+                ]
+            },
+            httpbin: {
+                base: 'https://httpbin.org',
+                idMax: null,
+                paths: [
+                    { path: '/get', method: 'GET' },
+                    { path: '/post', method: 'POST', body: '{}' },
+                    { path: '/json', method: 'GET' },
+                    { path: '/uuid', method: 'GET' },
+                    { path: '/delay/1', method: 'GET' },
+                    { path: '/status/418', method: 'GET' },
+                    { path: '/html', method: 'GET' },
+                ]
+            },
+            randomuser: {
+                base: 'https://randomuser.me/api',
+                idMax: null,
+                paths: [
+                    { path: '/?results=5', method: 'GET' },
+                    { path: '/?results=10&nat=gb,us,de,it', method: 'GET' },
+                    { path: '/?gender=female&results=3', method: 'GET' },
+                ]
+            },
+            pokeapi: {
+                base: 'https://pokeapi.co/api/v2',
+                idMax: 151,
+                paths: [
+                    { path: '/pokemon/{{id}}', method: 'GET', needId: true },
+                    { path: '/pokemon/pikachu', method: 'GET' },
+                    { path: '/type/3', method: 'GET' },
+                    { path: '/ability/1', method: 'GET' },
+                ]
+            }
+        };
+
+        function fareLoadEndpoints() {
+            const key = document.getElementById('fare-provider').value;
+            const cfg = REST_FAKE_APIS[key];
+            const sel = document.getElementById('fare-endpoint');
+            sel.innerHTML = '';
+            cfg.paths.forEach((ep, i) => {
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = ep.method + ' ' + ep.path;
+                sel.appendChild(opt);
+            });
+            fareToggleIdRow();
+            genFakeRest();
+        }
+
+        function fareToggleIdRow() {
+            const key = document.getElementById('fare-provider').value;
+            const cfg = REST_FAKE_APIS[key];
+            const idx = parseInt(document.getElementById('fare-endpoint').value, 10) || 0;
+            const ep = cfg.paths[idx];
+            const row = document.getElementById('fare-id-row');
+            if (ep && ep.needId) {
+                row.style.display = 'flex';
+                const idEl = document.getElementById('fare-id');
+                if (cfg.idMax) {
+                    idEl.max = cfg.idMax;
+                } else {
+                    idEl.removeAttribute('max');
+                }
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        function fareRandomId() {
+            const key = document.getElementById('fare-provider').value;
+            const cfg = REST_FAKE_APIS[key];
+            const max = cfg.idMax || 50;
+            document.getElementById('fare-id').value = String(Math.floor(Math.random() * max) + 1);
+            genFakeRest();
+        }
+
+        function genFakeRest() {
+            const key = document.getElementById('fare-provider').value;
+            const cfg = REST_FAKE_APIS[key];
+            const idx = parseInt(document.getElementById('fare-endpoint').value, 10) || 0;
+            const ep = cfg.paths[idx];
+            if (!ep) return;
+
+            let idVal = parseInt(document.getElementById('fare-id').value, 10) || 1;
+            if (cfg.idMax) {
+                idVal = Math.min(Math.max(1, idVal), cfg.idMax);
+            }
+
+            let path = ep.path;
+            if (ep.needId) {
+                path = path.replace(/\{\{id\}\}/g, String(idVal));
+            }
+
+            const url = cfg.base + path;
+            const method = ep.method || 'GET';
+            const body = ep.body;
+
+            let curl;
+            if (method === 'GET') {
+                curl = 'curl -sL ' + JSON.stringify(url);
+            } else {
+                const bodyStr = body != null ? body : '{}';
+                curl = 'curl -sL -X ' + method + ' -H "Content-Type: application/json" -d ' + JSON.stringify(bodyStr) + ' ' + JSON.stringify(url);
+            }
+
+            let fetchStr;
+            if (method === 'GET') {
+                fetchStr = 'fetch(' + JSON.stringify(url) + ')\n  .then(r => r.json())\n  .then(console.log)';
+            } else {
+                const bodyStr = body != null ? body : '{}';
+                fetchStr = 'fetch(' + JSON.stringify(url) + ', {\n  method: "' + method + '",\n  headers: { "Content-Type": "application/json" },\n  body: ' + JSON.stringify(bodyStr) + '\n})\n  .then(r => r.json())\n  .then(console.log)';
+            }
+
+            document.getElementById('fare-url').textContent = url;
+            document.getElementById('fare-curl').textContent = curl;
+            document.getElementById('fare-fetch').textContent = fetchStr;
+        }
+
+        fareLoadEndpoints();
 
         /* ========== JSON-LD STRUCTURED DATA GENERATOR ========== */
         function toggleJsonLdFields() {
