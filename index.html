@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, cron, timestamp, cURL, and more. No signup required.">
+        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, cron, timestamp, cURL, and more. No signup required.">
     <title>Penguin — Generators and utilities for developers</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%90%A7</text></svg>">
@@ -285,6 +285,7 @@
             border: 1px solid #1e1e1e;
             border-radius: 5px;
             margin-top: 16px;
+            overflow-x: auto;
         }
 
         .qr-wrap canvas,
@@ -726,6 +727,7 @@
             <button onclick="showPage('base64', this)"><span class="icon">&gt;</span> Base64</button>
             <button onclick="showPage('urlparse', this)"><span class="icon">&gt;</span> URL Parse</button>
             <button onclick="showPage('qrcode', this)"><span class="icon">&gt;</span> QR Code</button>
+            <button onclick="showPage('barcode', this)"><span class="icon">&gt;</span> Barcode</button>
             <button onclick="showPage('slug', this)"><span class="icon">&gt;</span> Slug</button>
             <button onclick="showPage('crontab', this)"><span class="icon">&gt;</span> Crontab</button>
             <button onclick="showPage('timestamp', this)"><span class="icon">&gt;</span> Timestamp</button>
@@ -933,6 +935,55 @@
                         <div id="qr-el"></div>
                     </div>
                     <div class="notify" id="qr-notify">Enter text or URL, then generate</div>
+                </div>
+
+                <!-- BARCODE GENERATOR -->
+                <div id="page-barcode" class="page">
+                    <div class="stat-bar">
+                        <span>LINEAR BARCODE (JSBARCODE)</span>
+                        <span>LOCAL / NO UPLOAD</span>
+                    </div>
+                    <div class="label">Data_</div>
+                    <input type="text" id="bc-text" placeholder="e.g. 5901234123457 or ABC-123" autocomplete="off"
+                        oninput="scheduleBarcode()">
+                    <div class="row" style="margin-bottom:5px;margin-top:8px">
+                        <div>
+                            <div class="label">Format</div>
+                            <select id="bc-format" onchange="genBarcode()">
+                                <option value="CODE128" selected>CODE128</option>
+                                <option value="CODE39">CODE39</option>
+                                <option value="CODE39EXTENDED">CODE39 extended</option>
+                                <option value="EAN13">EAN-13</option>
+                                <option value="EAN8">EAN-8</option>
+                                <option value="UPC">UPC</option>
+                                <option value="ITF14">ITF-14</option>
+                                <option value="ITF">ITF</option>
+                                <option value="MSI">MSI</option>
+                                <option value="codabar">Codabar</option>
+                                <option value="pharmacode">Pharmacode</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="label">Bar width</div>
+                            <input type="number" id="bc-width" value="2" min="1" max="6" step="0.5" oninput="genBarcode()">
+                        </div>
+                        <div>
+                            <div class="label">Height (px)</div>
+                            <input type="number" id="bc-height" value="100" min="40" max="200" step="10" oninput="genBarcode()">
+                        </div>
+                    </div>
+                    <div class="checkbox-row" style="margin-bottom:8px">
+                        <label><input type="checkbox" id="bc-showtext" checked onchange="genBarcode()"> Show text</label>
+                    </div>
+                    <div class="btn-row" style="margin-top:10px">
+                        <button type="button" class="btn" onclick="genBarcode()">&#x21BB; Generate</button>
+                        <button type="button" class="btn" onclick="downloadBarcode()" id="bc-download"
+                            style="display:none">&#x2193; Download PNG</button>
+                    </div>
+                    <div class="qr-wrap" id="bc-wrap" style="display:none">
+                        <canvas id="bc-canvas"></canvas>
+                    </div>
+                    <div class="notify" id="bc-notify">Enter data and choose format (EAN/UPC need valid lengths)</div>
                 </div>
 
                 <!-- JSON-LD STRUCTURED DATA GENERATOR -->
@@ -1752,6 +1803,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
     <script>
         /* ========== NAVIGATION ========== */
         const pageTitles = {
@@ -1767,6 +1819,7 @@
             base64: 'root@penguin: ~/base64',
             urlparse: 'root@penguin: ~/url-parse',
             qrcode: 'root@penguin: ~/qr-code',
+            barcode: 'root@penguin: ~/barcode',
             slug: 'root@penguin: ~/slug',
             crontab: 'root@penguin: ~/crontab',
             timestamp: 'root@penguin: ~/timestamp',
@@ -1792,6 +1845,7 @@
             if (id === 'appkey' && document.getElementById('appkey-out').innerText === '----') genAppKey();
             if (id === 'linux' && !document.getElementById('linux-list').innerHTML) filterLinux();
             if (id === 'qrcode') genQR();
+            if (id === 'barcode') genBarcode();
         }
 
         /* ========== MOBILE SIDEBAR ========== */
@@ -2153,6 +2207,105 @@
                 a.click();
             } finally {
                 document.body.removeChild(temp);
+            }
+        }
+
+        /* ========== BARCODE GENERATOR ========== */
+        let bcTimer;
+        function scheduleBarcode() {
+            clearTimeout(bcTimer);
+            bcTimer = setTimeout(genBarcode, 200);
+        }
+
+        function getBarcodeOptions(preview) {
+            const barWidth = Math.max(1, Math.min(6, parseFloat(document.getElementById('bc-width').value) || 2));
+            const height = Math.max(40, Math.min(200, parseInt(document.getElementById('bc-height').value, 10) || 100));
+            const displayValue = document.getElementById('bc-showtext').checked;
+            if (preview) {
+                return {
+                    width: barWidth,
+                    height: height,
+                    displayValue: displayValue,
+                    lineColor: '#00ff41',
+                    background: '#1a1a1a',
+                    font: 'monospace',
+                    fontSize: 14,
+                    textMargin: 4,
+                    margin: 10,
+                    fontColor: '#00ff41'
+                };
+            }
+            return {
+                width: barWidth,
+                height: height,
+                displayValue: displayValue,
+                lineColor: '#000000',
+                background: '#ffffff',
+                font: 'monospace',
+                fontSize: 14,
+                textMargin: 4,
+                margin: 10,
+                fontColor: '#000000'
+            };
+        }
+
+        function genBarcode() {
+            const wrap = document.getElementById('bc-wrap');
+            const dl = document.getElementById('bc-download');
+            const canvas = document.getElementById('bc-canvas');
+            const notify = document.getElementById('bc-notify');
+
+            if (typeof JsBarcode === 'undefined') {
+                notify.innerText = 'Barcode library failed to load';
+                notify.style.color = '#ff6b6b';
+                return;
+            }
+
+            const value = document.getElementById('bc-text').value.trim();
+            if (!value) {
+                wrap.style.display = 'none';
+                dl.style.display = 'none';
+                notify.innerText = 'Enter data to encode';
+                notify.style.color = '#444';
+                return;
+            }
+
+            const format = document.getElementById('bc-format').value;
+            const opts = Object.assign({ format: format }, getBarcodeOptions(true));
+
+            try {
+                JsBarcode(canvas, value, opts);
+                wrap.style.display = 'flex';
+                dl.style.display = 'inline-block';
+                notify.innerText = 'Download PNG (black on white) or edit above';
+                notify.style.color = 'var(--neon)';
+            } catch (e) {
+                wrap.style.display = 'none';
+                dl.style.display = 'none';
+                notify.innerText = (e && e.message) ? e.message : 'Invalid data for this format';
+                notify.style.color = '#ff6b6b';
+            }
+        }
+
+        function downloadBarcode() {
+            if (typeof JsBarcode === 'undefined') return;
+            const value = document.getElementById('bc-text').value.trim();
+            if (!value) return;
+
+            const format = document.getElementById('bc-format').value;
+            const opts = Object.assign({ format: format }, getBarcodeOptions(false));
+            const c = document.createElement('canvas');
+
+            try {
+                JsBarcode(c, value, opts);
+                const a = document.createElement('a');
+                a.download = 'penguin-barcode.png';
+                a.href = c.toDataURL('image/png');
+                a.rel = 'noopener';
+                a.click();
+            } catch (e) {
+                document.getElementById('bc-notify').innerText = (e && e.message) ? e.message : 'Cannot export';
+                document.getElementById('bc-notify').style.color = '#ff6b6b';
             }
         }
 
