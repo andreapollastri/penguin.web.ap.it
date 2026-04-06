@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, fake REST API, cron, timestamp, cURL, and more. No signup required.">
+        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, barcode, code format/minify (JSON, HTML, CSS, JS, YAML, XML, .env, PHP, SQL), fake REST API, cron, timestamp, cURL, and more. No signup required.">
     <title>Penguin — Generators and utilities for developers</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%90%A7</text></svg>">
@@ -700,6 +700,40 @@
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
             background: #444;
         }
+
+        /* ===== FORMAT / MINIFY ===== */
+        #page-format .fmt-io {
+            width: 100%;
+            min-height: 180px;
+            font-size: 12px;
+            line-height: 1.55;
+            margin-bottom: 16px;
+        }
+
+        #page-format .fmt-io.out {
+            min-height: 160px;
+            color: #ccc;
+            cursor: text;
+        }
+
+        #page-format #fmt-status {
+            font-size: 11px;
+            min-height: 18px;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        #page-format #fmt-status.ok {
+            color: #27c93f;
+        }
+
+        #page-format #fmt-status.err {
+            color: #ff5f56;
+        }
+
+        #page-format #fmt-status.hint {
+            color: #666;
+        }
     </style>
 </head>
 
@@ -737,6 +771,7 @@
             <button onclick="showPage('sql', this)"><span class="icon">&gt;</span> SQL</button>
             <button onclick="showPage('linux', this)"><span class="icon">&gt;</span> Linux</button>
             <button onclick="showPage('chmod', this)"><span class="icon">&gt;</span> Chmod</button>
+            <button onclick="showPage('format', this)"><span class="icon">&gt;</span> Format / Minify</button>
         </nav>
         <div class="sidebar-footer">Penguin · <a href="https://web.ap.it" target="_blank" rel="noopener"
                 style="color:#444;text-decoration:none">by @ndrea</a></div>
@@ -1845,6 +1880,57 @@
                     <div class="notify" id="fakeid-notify">Click any field to copy</div>
                 </div>
 
+                <!-- FORMAT / VALIDATE / MINIFY -->
+                <div id="page-format" class="page">
+                    <div class="stat-bar">
+                        <span>VALIDATE · BEAUTIFY · MINIFY</span>
+                        <span>LOCAL / NO UPLOAD</span>
+                    </div>
+                    <div class="row" style="margin-bottom:8px">
+                        <div style="flex:1;min-width:200px">
+                            <div class="label">Format</div>
+                            <select id="fmt-kind" onchange="fmtUpdateHint()">
+                                <option value="json">JSON</option>
+                                <option value="json5">JSON5</option>
+                                <option value="html">HTML</option>
+                                <option value="css">CSS / SCSS</option>
+                                <option value="js">JavaScript / TypeScript</option>
+                                <option value="xml">XML / SVG</option>
+                                <option value="yaml">YAML</option>
+                                <option value="toml">TOML</option>
+                                <option value="graphql">GraphQL</option>
+                                <option value="sql">SQL</option>
+                                <option value="php">PHP</option>
+                                <option value="env">.env</option>
+                                <option value="ini">INI</option>
+                                <option value="md">Markdown</option>
+                            </select>
+                        </div>
+                        <div style="flex:0 0 100px">
+                            <div class="label">Indent</div>
+                            <select id="fmt-indent">
+                                <option value="2" selected>2 spaces</option>
+                                <option value="4">4 spaces</option>
+                                <option value="tab">Tab</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p id="fmt-status" class="hint"></p>
+                    <div class="label">Input_</div>
+                    <textarea id="fmt-in" class="fmt-io" rows="12" placeholder="Paste code here…" spellcheck="false"
+                        autocomplete="off"></textarea>
+                    <div class="btn-row" style="margin-bottom:12px">
+                        <button type="button" class="btn" onclick="fmtRun('validate')">Validate</button>
+                        <button type="button" class="btn" onclick="fmtRun('beautify')"
+                            style="background:var(--neon);color:#000">Beautify</button>
+                        <button type="button" class="btn" onclick="fmtRun('minify')">Minify</button>
+                        <button type="button" class="btn" onclick="fmtCopyOut()">Copy output</button>
+                    </div>
+                    <div class="label">Output_</div>
+                    <textarea id="fmt-out" class="fmt-io out" rows="10" readonly spellcheck="false"></textarea>
+                    <div class="notify" id="fmt-notify">Runs in your browser; large inputs may be slow</div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1852,6 +1938,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.11/beautify-html.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.11/beautify-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.11/beautify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sql-formatter@15.4.6/dist/sql-formatter.min.js"></script>
     <script>
         /* ========== NAVIGATION ========== */
         const pageTitles = {
@@ -1877,6 +1968,7 @@
             sql: 'root@penguin: ~/sql',
             linux: 'root@penguin: ~/linux-commands',
             chmod: 'root@penguin: ~/chmod',
+            format: 'root@penguin: ~/format-minify',
         };
 
         function showPage(id, btn) {
@@ -1896,7 +1988,376 @@
             if (id === 'qrcode') genQR();
             if (id === 'barcode') genBarcode();
             if (id === 'fakerest') genFakeRest();
+            if (id === 'format') fmtUpdateHint();
         }
+
+        /* ========== FORMAT / VALIDATE / MINIFY ========== */
+        function fmtIndentChar() {
+            const v = document.getElementById('fmt-indent').value;
+            if (v === 'tab') return '\t';
+            const n = parseInt(v, 10) || 2;
+            return ' '.repeat(Math.min(8, Math.max(1, n)));
+        }
+
+        function fmtSetStatus(msg, kind) {
+            const el = document.getElementById('fmt-status');
+            el.className = kind || 'hint';
+            el.textContent = msg || '';
+        }
+
+        function fmtUpdateHint() {
+            const k = document.getElementById('fmt-kind').value;
+            const hints = {
+                json: 'JSON: strict RFC 8259. Beautify and minify use JSON.parse / JSON.stringify.',
+                json5: 'JSON5: comments and trailing commas allowed (JSON5 library).',
+                html: 'HTML: js-beautify. Minify removes HTML comments and collapses whitespace between tags.',
+                css: 'CSS / SCSS: js-beautify (CSS). Minify strips comments and extra whitespace.',
+                js: 'JavaScript / TypeScript: js-beautify; minify uses Terser (best-effort).',
+                xml: 'XML / SVG: DOMParser + indented serializer. Minify collapses whitespace between tags.',
+                yaml: 'YAML: js-yaml. Minify re-serializes in a compact style.',
+                toml: 'TOML: parsed with @iarna/toml (loaded on demand).',
+                graphql: 'GraphQL: graphql parse/print (loaded on demand).',
+                sql: 'SQL: sql-formatter. Minify uses a single-line compact style.',
+                php: 'PHP: heuristic indent (no full parser). Minify strips block comments and collapses whitespace.',
+                env: '.env: KEY=value lines, sorted and normalized. Minify removes blank lines and extra spaces around =.',
+                ini: 'INI: section headers [name] and key=value lines, normalized.',
+                md: 'Markdown: normalize newlines only; structural formatting is not applied.',
+            };
+            fmtSetStatus(hints[k] || '', 'hint');
+        }
+
+        function fmtXmlBeautify(str) {
+            const tab = fmtIndentChar();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(str, 'application/xml');
+            const err = doc.querySelector('parsererror');
+            if (err) throw new Error((err.textContent || '').trim().slice(0, 200) || 'Invalid XML');
+            function ser(node, depth) {
+                if (node.nodeType === Node.DOCUMENT_NODE) {
+                    let o = '';
+                    for (const c of node.childNodes) o += ser(c, depth);
+                    return o.trim() + '\n';
+                }
+                if (node.nodeType === Node.DOCUMENT_TYPE_NODE) return '';
+                if (node.nodeType === Node.COMMENT_NODE) return tab.repeat(depth) + '<!--' + node.data + '-->\n';
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const t = node.textContent.replace(/\s+/g, ' ').trim();
+                    return t ? tab.repeat(depth) + t + '\n' : '';
+                }
+                if (node.nodeType === Node.CDATA_SECTION_NODE) {
+                    return tab.repeat(depth) + '<![CDATA[' + node.data + ']]>\n';
+                }
+                if (node.nodeType !== Node.ELEMENT_NODE) return '';
+                const name = node.nodeName;
+                const attrs = [...node.attributes].map(a => ' ' + a.name + '="' + String(a.value).replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"').join('');
+                const kids = [...node.childNodes];
+                const onlyText = kids.length === 1 && kids[0].nodeType === Node.TEXT_NODE;
+                if (onlyText) {
+                    const inner = kids[0].textContent;
+                    return tab.repeat(depth) + '<' + name + attrs + '>' + inner.trim() + '</' + name + '>\n';
+                }
+                if (!kids.length) return tab.repeat(depth) + '<' + name + attrs + '/>\n';
+                let inner = '';
+                for (const c of kids) inner += ser(c, depth + 1);
+                return tab.repeat(depth) + '<' + name + attrs + '>\n' + inner + tab.repeat(depth) + '</' + name + '>\n';
+            }
+            return ser(doc, 0).trimEnd();
+        }
+
+        function fmtXmlMinify(str) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(str, 'application/xml');
+            const err = doc.querySelector('parsererror');
+            if (err) throw new Error((err.textContent || '').trim().slice(0, 200) || 'Invalid XML');
+            return new XMLSerializer().serializeToString(doc.documentElement);
+        }
+
+        function fmtMinifyHtml(s) {
+            return s
+                .replace(/<!--[\s\S]*?-->/g, '')
+                .replace(/>\s+</g, '><')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+        }
+
+        function fmtMinifyCss(s) {
+            return s
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\s*([{}:;,>+~])\s*/g, '$1')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function fmtBeautifyPhp(s) {
+            const tab = fmtIndentChar();
+            let depth = 0;
+            const lines = s.split(/\r?\n/);
+            const out = [];
+            for (const raw of lines) {
+                const line = raw.trim();
+                if (!line) { out.push(''); continue; }
+                if (/^(else\b|elseif\b|catch\b|finally\b)/.test(line)) depth = Math.max(0, depth - 1);
+                out.push(tab.repeat(depth) + line);
+                const opens = (line.match(/\{/g) || []).length;
+                const closes = (line.match(/\}/g) || []).length;
+                depth += opens - closes;
+                depth = Math.max(0, depth);
+            }
+            return out.join('\n').trimEnd() + '\n';
+        }
+
+        function fmtMinifyPhp(s) {
+            return s
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/(^|[^:])\/\/.*$/gm, '$1')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function fmtParseEnv(text) {
+            const out = [];
+            for (const raw of text.split(/\r?\n/)) {
+                const line = raw.trim();
+                if (!line || line.startsWith('#')) {
+                    if (line.startsWith('#')) out.push({ type: 'comment', value: raw });
+                    continue;
+                }
+                const eq = line.indexOf('=');
+                if (eq < 1) { out.push({ type: 'raw', value: raw }); continue; }
+                const key = line.slice(0, eq).trim();
+                let val = line.slice(eq + 1);
+                if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'")))
+                    val = val.slice(1, -1);
+                out.push({ type: 'kv', key, value: val });
+            }
+            return out;
+        }
+
+        function fmtBeautifyEnv(text) {
+            const rows = fmtParseEnv(text);
+            const kvs = rows.filter(r => r.type === 'kv').sort((a, b) => a.key.localeCompare(b.key));
+            const comments = rows.filter(r => r.type === 'comment');
+            const others = rows.filter(r => r.type === 'raw');
+            const lines = [];
+            comments.forEach(c => lines.push(c.value));
+            kvs.forEach(({ key, value }) => {
+                const needsQ = /[#\s"'=]/.test(value) || value === '';
+                lines.push(needsQ ? `${key}="${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"` : `${key}=${value}`);
+            });
+            others.forEach(o => lines.push(o.value));
+            return lines.join('\n').trim() + '\n';
+        }
+
+        function fmtMinifyEnv(text) {
+            return fmtParseEnv(text)
+                .filter(r => r.type === 'kv')
+                .map(({ key, value }) => `${key}=${value}`)
+                .join('\n');
+        }
+
+        function fmtBeautifyIni(text) {
+            let cur = '';
+            const blocks = [];
+            for (const raw of text.split(/\r?\n/)) {
+                const line = raw.trimEnd();
+                const t = line.trim();
+                if (/^\[.+\]$/.test(t)) {
+                    cur = t;
+                    if (!blocks.find(b => b.sec === cur)) blocks.push({ sec: cur, lines: [] });
+                } else if (t && !t.startsWith(';') && t.includes('=')) {
+                    let b = blocks.find(x => x.sec === cur);
+                    if (!b) { b = { sec: '', lines: [] }; blocks.unshift(b); }
+                    const eq = t.indexOf('=');
+                    const k = t.slice(0, eq).trim();
+                    const v = t.slice(eq + 1).trim();
+                    b.lines.push({ k, v });
+                } else if (t.startsWith(';')) {
+                    let b = blocks.find(x => x.sec === cur);
+                    if (!b) { b = { sec: '', lines: [] }; blocks.unshift(b); }
+                    b.lines.push({ comment: t });
+                }
+            }
+            const tab = fmtIndentChar();
+            let o = '';
+            for (const b of blocks) {
+                if (b.sec) o += b.sec + '\n';
+                for (const L of b.lines) {
+                    if (L.comment) o += L.comment + '\n';
+                    else o += tab + L.k + ' = ' + L.v + '\n';
+                }
+                o += '\n';
+            }
+            return o.trim() + '\n';
+        }
+
+        async function fmtRun(mode) {
+            const kind = document.getElementById('fmt-kind').value;
+            const input = document.getElementById('fmt-in').value;
+            const outEl = document.getElementById('fmt-out');
+            const indent = fmtIndentChar();
+
+            const beautOpts = {
+                indent_size: indent === '\t' ? 1 : (parseInt(document.getElementById('fmt-indent').value, 10) || 2),
+                indent_char: indent === '\t' ? '\t' : ' ',
+                max_preserve_newlines: 2,
+                wrap_line_length: 120,
+            };
+
+            try {
+                if (kind === 'json') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    const obj = JSON.parse(input);
+                    if (mode === 'validate') { outEl.value = JSON.stringify(obj, null, 2); fmtSetStatus('Valid JSON.', 'ok'); return; }
+                    if (mode === 'beautify') { outEl.value = JSON.stringify(obj, null, 2); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = JSON.stringify(obj); fmtSetStatus('Minified.', 'ok'); return;
+                }
+
+                if (kind === 'json5') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    const { default: JSON5 } = await import('https://esm.sh/json5@2.2.3');
+                    const obj = JSON5.parse(input);
+                    const sp = indent === '\t' ? '\t' : (parseInt(document.getElementById('fmt-indent').value, 10) || 2);
+                    if (mode === 'validate') { outEl.value = JSON.stringify(obj, null, 2); fmtSetStatus('Valid JSON5.', 'ok'); return; }
+                    if (mode === 'beautify') { outEl.value = JSON5.stringify(obj, null, sp); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = JSON5.stringify(obj); fmtSetStatus('Minified.', 'ok'); return;
+                }
+
+                if (kind === 'html') {
+                    if (typeof html_beautify === 'undefined') throw new Error('html_beautify not loaded');
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') {
+                        const p = new DOMParser();
+                        const d = p.parseFromString(input, 'text/html');
+                        const bad = d.querySelector('parsererror');
+                        if (bad) throw new Error('HTML parse warning: ' + (bad.textContent || '').slice(0, 120));
+                        fmtSetStatus('Parsed as HTML (browser parser).', 'ok');
+                        outEl.value = input; return;
+                    }
+                    if (mode === 'beautify') { outEl.value = html_beautify(input, beautOpts); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = fmtMinifyHtml(input); fmtSetStatus('Minified (whitespace/comments).', 'ok'); return;
+                }
+
+                if (kind === 'css') {
+                    if (typeof css_beautify === 'undefined') throw new Error('css_beautify not loaded');
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') { fmtSetStatus('No strict CSS validator in-browser; output is a beautify preview.', 'hint'); outEl.value = css_beautify(input, beautOpts); return; }
+                    if (mode === 'beautify') { outEl.value = css_beautify(input, beautOpts); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = fmtMinifyCss(input); fmtSetStatus('Minified.', 'ok'); return;
+                }
+
+                if (kind === 'js') {
+                    if (typeof js_beautify === 'undefined') throw new Error('js_beautify not loaded');
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') {
+                        try { new Function(input); } catch (e) { throw new Error('Syntax issue: ' + (e.message || e)); }
+                        fmtSetStatus('Parsed with `new Function` (best-effort; not full TS).', 'ok');
+                        outEl.value = input; return;
+                    }
+                    if (mode === 'beautify') { outEl.value = js_beautify(input, beautOpts); fmtSetStatus('Beautified.', 'ok'); return; }
+                    const { minify } = await import('https://esm.sh/terser@5.31.0');
+                    const r = await minify(input, { compress: true, mangle: true, format: { comments: false } });
+                    if (r.error) throw r.error;
+                    outEl.value = r.code || ''; fmtSetStatus('Minified with Terser (via esm).', 'ok'); return;
+                }
+
+                if (kind === 'xml') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') { outEl.value = fmtXmlBeautify(input); fmtSetStatus('Valid XML.', 'ok'); return; }
+                    if (mode === 'beautify') { outEl.value = fmtXmlBeautify(input); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = fmtXmlMinify(input); fmtSetStatus('Minified.', 'ok'); return;
+                }
+
+                if (kind === 'yaml') {
+                    const yamlApi = window.jsyaml;
+                    if (!yamlApi || typeof yamlApi.load !== 'function') throw new Error('js-yaml not loaded');
+                    if (!input.trim()) throw new Error('Empty input');
+                    const data = yamlApi.load(input);
+                    if (mode === 'validate') { fmtSetStatus('Valid YAML.', 'ok'); outEl.value = typeof data === 'object' && data !== null ? JSON.stringify(data, null, 2) : String(data); return; }
+                    if (mode === 'beautify') { outEl.value = yamlApi.dump(data, { indent: indent === '\t' ? 2 : (parseInt(document.getElementById('fmt-indent').value, 10) || 2), lineWidth: 120, noRefs: true }); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = yamlApi.dump(data, { flowLevel: 1000, lineWidth: 9999, noRefs: true }); fmtSetStatus('Compact YAML.', 'ok'); return;
+                }
+
+                if (kind === 'toml') {
+                    const mod = await import('https://esm.sh/@iarna/toml@2.2.5');
+                    const parse = mod.parse || mod.default?.parse;
+                    const stringify = mod.stringify || mod.default?.stringify;
+                    if (!parse || !stringify) throw new Error('TOML module missing parse/stringify');
+                    if (!input.trim()) throw new Error('Empty input');
+                    const data = parse(input);
+                    if (mode === 'validate') { fmtSetStatus('Valid TOML.', 'ok'); outEl.value = input; return; }
+                    if (mode === 'beautify') { outEl.value = stringify(data); fmtSetStatus('Re-serialized TOML.', 'ok'); return; }
+                    outEl.value = stringify(data).replace(/\n+/g, ' ').trim(); fmtSetStatus('Compact TOML.', 'ok'); return;
+                }
+
+                if (kind === 'graphql') {
+                    const { parse, print } = await import('https://esm.sh/graphql@16.8.1');
+                    if (!input.trim()) throw new Error('Empty input');
+                    const ast = parse(input);
+                    if (mode === 'validate') { fmtSetStatus('Valid GraphQL document.', 'ok'); outEl.value = print(ast); return; }
+                    if (mode === 'beautify') { outEl.value = print(ast); fmtSetStatus('Formatted with graphql print.', 'ok'); return; }
+                    outEl.value = print(ast).replace(/\s+/g, ' ').trim(); fmtSetStatus('Single-line GraphQL.', 'ok'); return;
+                }
+
+                if (kind === 'sql') {
+                    const SF = window.sqlFormatter;
+                    if (!SF || typeof SF.format !== 'function') throw new Error('sql-formatter not loaded');
+                    if (!input.trim()) throw new Error('Empty input');
+                    const tw = indent === '\t' ? 4 : (parseInt(document.getElementById('fmt-indent').value, 10) || 2);
+                    const opts = { language: 'sql', tabWidth: tw, useTabs: indent === '\t' };
+                    if (mode === 'validate') { outEl.value = SF.format(input, opts); fmtSetStatus('Formatted (best-effort SQL parse).', 'ok'); return; }
+                    if (mode === 'beautify') { outEl.value = SF.format(input, opts); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = input.replace(/\s+/g, ' ').replace(/\s*([(),;])\s*/g, '$1').trim(); fmtSetStatus('Compact SQL.', 'ok'); return;
+                }
+
+                if (kind === 'php') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') { fmtSetStatus('Heuristic only (no php -l).', 'hint'); outEl.value = fmtBeautifyPhp(input); return; }
+                    if (mode === 'beautify') { outEl.value = fmtBeautifyPhp(input); fmtSetStatus('Heuristic beautify.', 'ok'); return; }
+                    outEl.value = fmtMinifyPhp(input); fmtSetStatus('Minified (heuristic).', 'ok'); return;
+                }
+
+                if (kind === 'env') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') { fmtSetStatus('.env structure OK.', 'ok'); outEl.value = fmtBeautifyEnv(input); return; }
+                    if (mode === 'beautify') { outEl.value = fmtBeautifyEnv(input); fmtSetStatus('Normalized & sorted keys.', 'ok'); return; }
+                    outEl.value = fmtMinifyEnv(input); fmtSetStatus('Minified.', 'ok'); return;
+                }
+
+                if (kind === 'ini') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    if (mode === 'validate') { fmtSetStatus('INI normalized (best-effort).', 'ok'); outEl.value = fmtBeautifyIni(input); return; }
+                    if (mode === 'beautify') { outEl.value = fmtBeautifyIni(input); fmtSetStatus('Beautified.', 'ok'); return; }
+                    outEl.value = input.replace(/^[ \t]+/gm, '').replace(/\n{3,}/g, '\n\n').trim(); fmtSetStatus('Compact INI.', 'ok'); return;
+                }
+
+                if (kind === 'md') {
+                    if (!input.trim()) throw new Error('Empty input');
+                    const norm = input.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+                    fmtSetStatus(mode === 'validate' ? 'Markdown: newline normalization only.' : 'Normalized newlines.', 'hint');
+                    outEl.value = norm; return;
+                }
+
+                throw new Error('Unknown format');
+            } catch (e) {
+                const msg = e && e.message ? e.message : String(e);
+                fmtSetStatus('Error: ' + msg, 'err');
+                outEl.value = '';
+            }
+        }
+
+        function fmtCopyOut() {
+            const outEl = document.getElementById('fmt-out');
+            const t = outEl.value;
+            if (!t) return;
+            navigator.clipboard.writeText(t).then(() => {
+                const n = document.getElementById('fmt-notify');
+                n.textContent = '\u2713 COPIED';
+                n.style.color = 'var(--neon)';
+                setTimeout(() => { n.textContent = 'Runs in your browser; large inputs may be slow'; n.style.color = '#444'; }, 1500);
+            });
+        }
+
+        fmtUpdateHint();
 
         /* ========== MOBILE SIDEBAR ========== */
         function toggleSidebar() {
