@@ -880,52 +880,6 @@
             max-width: 1000px;
         }
 
-        .webtools-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 18px;
-        }
-
-        .webtools-tabs button {
-            background: #0a0a0a;
-            border: 1px solid #282828;
-            color: #888;
-            font-family: inherit;
-            font-size: 10px;
-            padding: 7px 11px;
-            cursor: pointer;
-            border-radius: 3px;
-            letter-spacing: 0.5px;
-        }
-
-        .webtools-tabs button:hover {
-            border-color: var(--neon);
-            color: var(--neon);
-        }
-
-        .webtools-tabs button.wt-active {
-            border-color: var(--neon);
-            color: var(--neon);
-            background: rgba(0, 255, 65, 0.06);
-        }
-
-        .webtools-panel {
-            display: none;
-        }
-
-        .webtools-panel.wt-show {
-            display: block;
-        }
-
-        .webtools-panel .label {
-            margin-top: 12px;
-        }
-
-        .webtools-panel .label:first-child {
-            margin-top: 0;
-        }
-
         .wt-pre {
             background: #0a0a0a;
             border: 1px solid #1e1e1e;
@@ -1078,7 +1032,16 @@
             <button onclick="showPage('kali', this)"><span class="icon">&gt;</span> Kali</button>
             <button onclick="showPage('sanitize', this)"><span class="icon">&gt;</span> Script sanitizer</button>
             <button onclick="showPage('mdpreview', this)"><span class="icon">&gt;</span> MD preview</button>
-            <button onclick="showPage('webtools', this)"><span class="icon">&gt;</span> Web tools</button>
+            <button onclick="showPage('sitemap', this)"><span class="icon">&gt;</span> Sitemap</button>
+            <button onclick="showPage('socialmeta', this)"><span class="icon">&gt;</span> OG / Twitter</button>
+            <button onclick="showPage('favicon', this)"><span class="icon">&gt;</span> Favicon</button>
+            <button onclick="showPage('cssmedia', this)"><span class="icon">&gt;</span> CSS media</button>
+            <button onclick="showPage('svgicons', this)"><span class="icon">&gt;</span> SVG icons</button>
+            <button onclick="showPage('speedtest', this)"><span class="icon">&gt;</span> Speed test</button>
+            <button onclick="showPage('perfcheck', this)"><span class="icon">&gt;</span> Performance</button>
+            <button onclick="showPage('onlinecheck', this)"><span class="icon">&gt;</span> Online check</button>
+            <button onclick="showPage('portcheck', this)"><span class="icon">&gt;</span> Port check</button>
+            <button onclick="showPage('hostdns', this)"><span class="icon">&gt;</span> Host / DNS</button>
         </nav>
         <div class="sidebar-footer">Penguin · <a href="https://web.ap.it" target="_blank" rel="noopener"
                 style="color:#444;text-decoration:none">by @ndrea</a></div>
@@ -2484,206 +2447,241 @@
                     <div class="notify" id="md-notify">Preview is sanitized; scripts are stripped</div>
                 </div>
 
-                <!-- WEB TOOLS -->
-                <div id="page-webtools" class="page">
+                <!-- SITEMAP -->
+                <div id="page-sitemap" class="page">
                     <div class="stat-bar">
-                        <span>SITEMAP · META · FAVICON · CSS · ICONS · NET</span>
-                        <span>LOCAL + DNS (HTTPS)</span>
+                        <span>SITEMAP.XML</span>
+                        <span>LOCAL</span>
                     </div>
-                    <p class="wt-hint">Generators run in your browser. DNS lookups use Google DNS-over-HTTPS. TCP port scan and
-                        full HTTP status for arbitrary hosts are not possible from a static page; snippets and external tools
-                        are provided where needed.</p>
-                    <div class="webtools-tabs" id="webtools-tabs">
-                        <button type="button" class="wt-active" data-wt="sitemap" onclick="webtoolsTab('sitemap', this)">Sitemap</button>
-                        <button type="button" data-wt="meta" onclick="webtoolsTab('meta', this)">OG / Twitter</button>
-                        <button type="button" data-wt="favicon" onclick="webtoolsTab('favicon', this)">Favicon</button>
-                        <button type="button" data-wt="media" onclick="webtoolsTab('media', this)">CSS media</button>
-                        <button type="button" data-wt="icons" onclick="webtoolsTab('icons', this)">SVG icons</button>
-                        <button type="button" data-wt="speed" onclick="webtoolsTab('speed', this)">Speed test</button>
-                        <button type="button" data-wt="perf" onclick="webtoolsTab('perf', this)">Performance</button>
-                        <button type="button" data-wt="online" onclick="webtoolsTab('online', this)">Online check</button>
-                        <button type="button" data-wt="ports" onclick="webtoolsTab('ports', this)">Port check</button>
-                        <button type="button" data-wt="netinfo" onclick="webtoolsTab('netinfo', this)">Host / DNS</button>
+                    <div class="label">Base URL (no trailing slash)</div>
+                    <input type="text" id="sm-base" placeholder="https://example.com" spellcheck="false">
+                    <div class="label">Paths (one per line, or full URLs)</div>
+                    <textarea id="sm-paths" class="fmt-io" rows="8" spellcheck="false"
+                        placeholder="/&#10;/about&#10;/blog/post-1"></textarea>
+                    <div class="wt-row">
+                        <div>
+                            <div class="label">changefreq</div>
+                            <select id="sm-changefreq">
+                                <option value="always">always</option>
+                                <option value="hourly">hourly</option>
+                                <option value="daily" selected>daily</option>
+                                <option value="weekly">weekly</option>
+                                <option value="monthly">monthly</option>
+                                <option value="yearly">yearly</option>
+                                <option value="never">never</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="label">priority (0.0–1.0)</div>
+                            <input type="text" id="sm-prio" value="0.8" spellcheck="false">
+                        </div>
                     </div>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtGenSitemap()">Generate XML</button>
+                        <button type="button" class="btn" onclick="wtCopy('sm-out','wt-notify-sitemap')">Copy XML</button>
+                    </div>
+                    <div class="label">sitemap.xml</div>
+                    <textarea id="sm-out" class="fmt-io out" rows="12" readonly spellcheck="false"></textarea>
+                    <div class="notify" id="wt-notify-sitemap">—</div>
+                </div>
 
-                    <div id="wt-panel-sitemap" class="webtools-panel wt-show">
-                        <div class="label">Base URL (no trailing slash)</div>
-                        <input type="text" id="sm-base" placeholder="https://example.com" spellcheck="false">
-                        <div class="label">Paths (one per line, or full URLs)</div>
-                        <textarea id="sm-paths" class="fmt-io" rows="8" spellcheck="false"
-                            placeholder="/&#10;/about&#10;/blog/post-1"></textarea>
-                        <div class="wt-row">
-                            <div>
-                                <div class="label">changefreq</div>
-                                <select id="sm-changefreq">
-                                    <option value="always">always</option>
-                                    <option value="hourly">hourly</option>
-                                    <option value="daily" selected>daily</option>
-                                    <option value="weekly">weekly</option>
-                                    <option value="monthly">monthly</option>
-                                    <option value="yearly">yearly</option>
-                                    <option value="never">never</option>
-                                </select>
-                            </div>
-                            <div>
-                                <div class="label">priority (0.0–1.0)</div>
-                                <input type="text" id="sm-prio" value="0.8" spellcheck="false">
-                            </div>
-                        </div>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtGenSitemap()">Generate XML</button>
-                            <button type="button" class="btn" onclick="wtCopy('sm-out')">Copy XML</button>
-                        </div>
-                        <div class="label">sitemap.xml</div>
-                        <textarea id="sm-out" class="fmt-io out" rows="12" readonly spellcheck="false"></textarea>
+                <!-- OG / TWITTER -->
+                <div id="page-socialmeta" class="page">
+                    <div class="stat-bar">
+                        <span>OPEN GRAPH · TWITTER</span>
+                        <span>LOCAL</span>
                     </div>
-
-                    <div id="wt-panel-meta" class="webtools-panel">
-                        <div class="wt-row">
-                            <div>
-                                <div class="label">Page title</div>
-                                <input type="text" id="og-title" placeholder="Page title">
-                            </div>
-                            <div>
-                                <div class="label">Site name</div>
-                                <input type="text" id="og-site" placeholder="My site">
-                            </div>
+                    <div class="wt-row">
+                        <div>
+                            <div class="label">Page title</div>
+                            <input type="text" id="og-title" placeholder="Page title">
                         </div>
-                        <div class="label">Description</div>
-                        <textarea id="og-desc" class="fmt-io" rows="3" placeholder="Short description for previews"></textarea>
-                        <div class="wt-row">
-                            <div>
-                                <div class="label">Canonical URL</div>
-                                <input type="text" id="og-url" placeholder="https://example.com/page">
-                            </div>
-                            <div>
-                                <div class="label">Image URL (1200×630 recommended)</div>
-                                <input type="text" id="og-img" placeholder="https://example.com/og.jpg">
-                            </div>
-                        </div>
-                        <div class="wt-row">
-                            <div>
-                                <div class="label">Twitter @username (no @)</div>
-                                <input type="text" id="og-tw-user" placeholder="handle">
-                            </div>
-                            <div>
-                                <div class="label">Twitter card</div>
-                                <select id="og-tw-card">
-                                    <option value="summary_large_image" selected>summary_large_image</option>
-                                    <option value="summary">summary</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="label">Locale (optional)</div>
-                        <input type="text" id="og-locale" placeholder="it_IT" spellcheck="false">
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtGenMeta()">Generate tags</button>
-                            <button type="button" class="btn" onclick="wtCopy('og-out')">Copy HTML</button>
-                        </div>
-                        <div class="label">&lt;head&gt; snippet</div>
-                        <textarea id="og-out" class="fmt-io out" rows="16" readonly spellcheck="false"></textarea>
-                    </div>
-
-                    <div id="wt-panel-favicon" class="webtools-panel">
-                        <div class="label">Image file (PNG / JPG / SVG / WebP)</div>
-                        <input type="file" id="fav-file" accept="image/*" onchange="wtFaviconLoad()">
-                        <p class="wt-hint">Resizes to 32×32 PNG in the browser. For production, also ship 16×16 and 180×180
-                            (apple-touch-icon) from your design tool.</p>
-                        <canvas id="fav-canvas" width="32" height="32" style="display:none"></canvas>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtFaviconDownload()" id="fav-dl-btn" disabled>Download favicon-32.png</button>
-                        </div>
-                        <div class="label">HTML snippet</div>
-                        <textarea id="fav-html" class="fmt-io out" rows="5" readonly spellcheck="false"></textarea>
-                        <button type="button" class="btn" onclick="wtCopy('fav-html')">Copy HTML</button>
-                    </div>
-
-                    <div id="wt-panel-media" class="webtools-panel">
-                        <div class="label">Common breakpoints (copy into your CSS)</div>
-                        <textarea id="wt-media-pre" class="fmt-io out" rows="22" readonly spellcheck="false"></textarea>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtCopy('wt-media-pre')">Copy</button>
+                        <div>
+                            <div class="label">Site name</div>
+                            <input type="text" id="og-site" placeholder="My site">
                         </div>
                     </div>
-
-                    <div id="wt-panel-icons" class="webtools-panel">
-                        <div class="wt-icon-toolbar">
-                            <input type="search" id="wt-icon-filter" placeholder="Filter icons…" oninput="wtIconFilter()"
-                                spellcheck="false">
-                            <button type="button" class="btn" onclick="wtLoadIcons(true)">Reload from Lucide (GitHub)</button>
+                    <div class="label">Description</div>
+                    <textarea id="og-desc" class="fmt-io" rows="3" placeholder="Short description for previews"></textarea>
+                    <div class="wt-row">
+                        <div>
+                            <div class="label">Canonical URL</div>
+                            <input type="text" id="og-url" placeholder="https://example.com/page">
                         </div>
-                        <p class="wt-hint">Open-source <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">Lucide</a>
-                            icons via unpkg. Click a cell to copy an &lt;img&gt; tag. First open loads filenames from GitHub API (~400+).</p>
-                        <div id="wt-icon-grid" class="wt-icon-grid"></div>
-                        <div class="notify" id="wt-icon-status">—</div>
+                        <div>
+                            <div class="label">Image URL (1200×630 recommended)</div>
+                            <input type="text" id="og-img" placeholder="https://example.com/og.jpg">
+                        </div>
                     </div>
-
-                    <div id="wt-panel-speed" class="webtools-panel">
-                        <p class="wt-hint">Rough download speed: fetches a known asset from jsDelivr (several runs, median). Not a
-                            lab-grade speed test; use a dedicated tool on a wired connection for ISP benchmarking.</p>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtSpeedRun()">Run test</button>
+                    <div class="wt-row">
+                        <div>
+                            <div class="label">Twitter @username (no @)</div>
+                            <input type="text" id="og-tw-user" placeholder="handle">
                         </div>
-                        <div id="wt-speed-out" class="wt-pre">—</div>
+                        <div>
+                            <div class="label">Twitter card</div>
+                            <select id="og-tw-card">
+                                <option value="summary_large_image" selected>summary_large_image</option>
+                                <option value="summary">summary</option>
+                            </select>
+                        </div>
                     </div>
-
-                    <div id="wt-panel-perf" class="webtools-panel">
-                        <div class="label">Page URL to analyse</div>
-                        <input type="text" id="perf-url" placeholder="https://example.com" spellcheck="false">
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtPerfPsi()">Open PageSpeed Insights</button>
-                            <button type="button" class="btn" onclick="wtPerfWebvitals()">Open web.dev measure</button>
-                        </div>
-                        <p class="wt-hint">These open Google tools in a new tab (Lab + field data). No API key required on your
-                            side.</p>
+                    <div class="label">Locale (optional)</div>
+                    <input type="text" id="og-locale" placeholder="it_IT" spellcheck="false">
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtGenMeta()">Generate tags</button>
+                        <button type="button" class="btn" onclick="wtCopy('og-out','wt-notify-social')">Copy HTML</button>
                     </div>
+                    <div class="label">&lt;head&gt; snippet</div>
+                    <textarea id="og-out" class="fmt-io out" rows="16" readonly spellcheck="false"></textarea>
+                    <div class="notify" id="wt-notify-social">—</div>
+                </div>
 
-                    <div id="wt-panel-online" class="webtools-panel">
-                        <div class="label">Browser reports online</div>
-                        <div id="wt-on-nav" class="wt-kv"><b>navigator.onLine</b> —</div>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtOnlineNav()">Refresh</button>
-                        </div>
-                        <div class="label">This origin (this site)</div>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtOnlineThis()">Ping this page URL</button>
-                        </div>
-                        <div id="wt-on-this" class="wt-pre">—</div>
-                        <div class="label">External host (DNS + favicon probe)</div>
-                        <input type="text" id="wt-on-host" placeholder="example.com" spellcheck="false">
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtOnlineExt()">Check</button>
-                        </div>
-                        <div id="wt-on-ext" class="wt-pre">—</div>
-                        <p class="wt-hint">Full HTTP status for third-party URLs is blocked by browser CORS. DNS resolution and
-                            loading <code>/favicon.ico</code> indicate reachability for many sites, not a guarantee.</p>
+                <!-- FAVICON -->
+                <div id="page-favicon" class="page">
+                    <div class="stat-bar">
+                        <span>FAVICON PNG</span>
+                        <span>LOCAL</span>
                     </div>
-
-                    <div id="wt-panel-ports" class="webtools-panel">
-                        <p class="wt-hint">Browsers cannot open arbitrary TCP sockets to remote hosts. Use these commands on your
-                            machine or a server, or an online port scanner.</p>
-                        <div class="label">Bash (replace HOST / PORT)</div>
-                        <textarea id="wt-port-snippet" class="fmt-io out" rows="10" readonly spellcheck="false"></textarea>
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtPortFill()">Fill HOST from field below</button>
-                            <button type="button" class="btn" onclick="wtCopy('wt-port-snippet')">Copy</button>
-                        </div>
-                        <div class="label">Hostname / IP for fill helper</div>
-                        <input type="text" id="wt-port-host" placeholder="example.com" spellcheck="false">
-                        <p class="wt-hint">Optional: <a href="https://www.yougetsignal.com/tools/open-ports/" target="_blank"
-                                rel="noopener">YouGetSignal</a> (third-party) for remote checks from the web.</p>
+                    <div class="label">Image file (PNG / JPG / SVG / WebP)</div>
+                    <input type="file" id="fav-file" accept="image/*" onchange="wtFaviconLoad()">
+                    <p class="wt-hint">Resizes to 32×32 PNG in the browser. For production, also ship 16×16 and 180×180
+                        (apple-touch-icon) from your design tool.</p>
+                    <canvas id="fav-canvas" width="32" height="32" style="display:none"></canvas>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtFaviconDownload()" id="fav-dl-btn" disabled>Download favicon-32.png</button>
                     </div>
+                    <div class="label">HTML snippet</div>
+                    <textarea id="fav-html" class="fmt-io out" rows="5" readonly spellcheck="false"></textarea>
+                    <button type="button" class="btn" onclick="wtCopy('fav-html','wt-notify-favicon')">Copy HTML</button>
+                    <div class="notify" id="wt-notify-favicon">—</div>
+                </div>
 
-                    <div id="wt-panel-netinfo" class="webtools-panel">
-                        <div class="label">Hostname or IPv4 (for PTR use IP)</div>
-                        <input type="text" id="wt-net-q" placeholder="example.com or 8.8.8.8" spellcheck="false">
-                        <div class="btn-row">
-                            <button type="button" class="btn" onclick="wtDnsLookup()">Lookup DNS</button>
-                        </div>
-                        <div id="wt-net-out" class="wt-pre">—</div>
+                <!-- CSS MEDIA -->
+                <div id="page-cssmedia" class="page">
+                    <div class="stat-bar">
+                        <span>CSS MEDIA QUERIES</span>
+                        <span>SNIPPET</span>
                     </div>
+                    <div class="label">Common breakpoints (copy into your CSS)</div>
+                    <textarea id="wt-media-pre" class="fmt-io out" rows="22" readonly spellcheck="false"></textarea>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtCopy('wt-media-pre','wt-notify-cssmedia')">Copy</button>
+                    </div>
+                    <div class="notify" id="wt-notify-cssmedia">—</div>
+                </div>
 
-                    <div class="notify" id="webtools-notify">—</div>
+                <!-- SVG ICONS -->
+                <div id="page-svgicons" class="page">
+                    <div class="stat-bar">
+                        <span>LUCIDE SVG (UNPKG)</span>
+                        <span>GITHUB API + CDN</span>
+                    </div>
+                    <div class="wt-icon-toolbar">
+                        <input type="search" id="wt-icon-filter" placeholder="Filter icons…" oninput="wtIconFilter()"
+                            spellcheck="false">
+                        <button type="button" class="btn" onclick="wtLoadIcons(true)">Reload from Lucide (GitHub)</button>
+                    </div>
+                    <p class="wt-hint">Open-source <a href="https://lucide.dev/icons/" target="_blank" rel="noopener">Lucide</a>
+                        icons via unpkg. Click a cell to copy an &lt;img&gt; tag. First open loads filenames from GitHub API.</p>
+                    <div id="wt-icon-grid" class="wt-icon-grid"></div>
+                    <div class="notify" id="wt-icon-status">—</div>
+                    <div class="notify" id="wt-notify-svgicons">—</div>
+                </div>
+
+                <!-- SPEED TEST -->
+                <div id="page-speedtest" class="page">
+                    <div class="stat-bar">
+                        <span>DOWNLOAD SPEED (ESTIMATE)</span>
+                        <span>JSDELIVR</span>
+                    </div>
+                    <p class="wt-hint">Rough download speed: fetches a known asset from jsDelivr (several runs, median). Not a
+                        lab-grade speed test; use a dedicated tool on a wired connection for ISP benchmarking.</p>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtSpeedRun()">Run test</button>
+                    </div>
+                    <div id="wt-speed-out" class="wt-pre">—</div>
+                    <div class="notify" id="wt-notify-speed">—</div>
+                </div>
+
+                <!-- PERFORMANCE -->
+                <div id="page-perfcheck" class="page">
+                    <div class="stat-bar">
+                        <span>PAGESPEED · WEB.VITALS</span>
+                        <span>GOOGLE (NEW TAB)</span>
+                    </div>
+                    <div class="label">Page URL to analyse</div>
+                    <input type="text" id="perf-url" placeholder="https://example.com" spellcheck="false">
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtPerfPsi()">Open PageSpeed Insights</button>
+                        <button type="button" class="btn" onclick="wtPerfWebvitals()">Open web.dev measure</button>
+                    </div>
+                    <p class="wt-hint">These open Google tools in a new tab (Lab + field data). No API key required on your
+                        side.</p>
+                </div>
+
+                <!-- ONLINE CHECK -->
+                <div id="page-onlinecheck" class="page">
+                    <div class="stat-bar">
+                        <span>ONLINE / REACHABILITY</span>
+                        <span>DNS + PROBE</span>
+                    </div>
+                    <p class="wt-hint">Full HTTP status for third-party URLs is blocked by browser CORS. DNS resolution and
+                        loading <code>/favicon.ico</code> indicate reachability for many sites, not a guarantee.</p>
+                    <div class="label">Browser reports online</div>
+                    <div id="wt-on-nav" class="wt-kv"><b>navigator.onLine</b> —</div>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtOnlineNav()">Refresh</button>
+                    </div>
+                    <div class="label">This origin (this site)</div>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtOnlineThis()">Ping this page URL</button>
+                    </div>
+                    <div id="wt-on-this" class="wt-pre">—</div>
+                    <div class="label">External host (DNS + favicon probe)</div>
+                    <input type="text" id="wt-on-host" placeholder="example.com" spellcheck="false">
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtOnlineExt()">Check</button>
+                    </div>
+                    <div id="wt-on-ext" class="wt-pre">—</div>
+                    <div class="notify" id="wt-notify-online">—</div>
+                </div>
+
+                <!-- PORT CHECK -->
+                <div id="page-portcheck" class="page">
+                    <div class="stat-bar">
+                        <span>TCP / CLI SNIPPETS</span>
+                        <span>LOCAL TERMINAL</span>
+                    </div>
+                    <p class="wt-hint">Browsers cannot open arbitrary TCP sockets to remote hosts. Use these commands on your
+                        machine or a server, or an online port scanner.</p>
+                    <div class="label">Bash (replace HOST / PORT)</div>
+                    <textarea id="wt-port-snippet" class="fmt-io out" rows="10" readonly spellcheck="false"></textarea>
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtPortFill()">Fill HOST from field below</button>
+                        <button type="button" class="btn" onclick="wtCopy('wt-port-snippet','wt-notify-port')">Copy</button>
+                    </div>
+                    <div class="label">Hostname / IP for fill helper</div>
+                    <input type="text" id="wt-port-host" placeholder="example.com" spellcheck="false">
+                    <p class="wt-hint">Optional: <a href="https://www.yougetsignal.com/tools/open-ports/" target="_blank"
+                            rel="noopener">YouGetSignal</a> (third-party) for remote checks from the web.</p>
+                    <div class="notify" id="wt-notify-port">—</div>
+                </div>
+
+                <!-- HOST / DNS -->
+                <div id="page-hostdns" class="page">
+                    <div class="stat-bar">
+                        <span>DNS · PTR</span>
+                        <span>GOOGLE DoH</span>
+                    </div>
+                    <p class="wt-hint">DNS lookups use Google DNS-over-HTTPS from your browser.</p>
+                    <div class="label">Hostname or IPv4 (for PTR use IP)</div>
+                    <input type="text" id="wt-net-q" placeholder="example.com or 8.8.8.8" spellcheck="false">
+                    <div class="btn-row">
+                        <button type="button" class="btn" onclick="wtDnsLookup()">Lookup DNS</button>
+                    </div>
+                    <div id="wt-net-out" class="wt-pre">—</div>
+                    <div class="notify" id="wt-notify-hostdns">—</div>
                 </div>
 
             </div>
@@ -2734,7 +2732,16 @@
             kali: 'root@penguin: ~/kali-tools',
             sanitize: 'root@penguin: ~/script-sanitizer',
             mdpreview: 'root@penguin: ~/markdown-preview',
-            webtools: 'root@penguin: ~/web-tools',
+            sitemap: 'root@penguin: ~/sitemap-xml',
+            socialmeta: 'root@penguin: ~/og-twitter-meta',
+            favicon: 'root@penguin: ~/favicon-png',
+            cssmedia: 'root@penguin: ~/css-media-queries',
+            svgicons: 'root@penguin: ~/svg-icons-lucide',
+            speedtest: 'root@penguin: ~/speed-test',
+            perfcheck: 'root@penguin: ~/performance-test',
+            onlinecheck: 'root@penguin: ~/online-check',
+            portcheck: 'root@penguin: ~/port-check',
+            hostdns: 'root@penguin: ~/host-dns-lookup',
         };
 
         function showPage(id, btn) {
@@ -2761,12 +2768,17 @@
             if (id === 'placeholder') genPlaceholder();
             if (id === 'randomimg') genRandomImg();
             if (id === 'mdpreview') runMdPreview();
-            if (id === 'webtools') {
-                document.getElementById('main-content').classList.add('content-wide');
-                wtWebtoolsEnter();
-            } else {
-                document.getElementById('main-content').classList.remove('content-wide');
+            const wtWide = new Set(['svgicons']);
+            const mc = document.getElementById('main-content');
+            if (wtWide.has(id)) mc.classList.add('content-wide');
+            else mc.classList.remove('content-wide');
+            if (id === 'svgicons') {
+                const g = document.getElementById('wt-icon-grid');
+                if (g && g.dataset.loaded !== '1') wtLoadIcons(false);
             }
+            if (id === 'cssmedia' && !document.getElementById('wt-media-pre').value) wtMediaPreset();
+            if (id === 'portcheck' && !document.getElementById('wt-port-snippet').value.trim()) wtPortFill();
+            if (id === 'onlinecheck') wtOnlineNav();
         }
 
         /* ========== FORMAT / VALIDATE / MINIFY ========== */
@@ -5578,30 +5590,19 @@
 
         let wtFavDataUrl = null;
 
-        function webtoolsNotify(msg) {
-            const n = document.getElementById('webtools-notify');
+        function wtSetNotify(notifyId, msg) {
+            const n = document.getElementById(notifyId);
             if (n) n.textContent = msg || '—';
         }
 
-        function wtWebtoolsEnter() {
-            wtOnlineNav();
-            if (!document.getElementById('wt-media-pre').value) wtMediaPreset();
-            if (!document.getElementById('wt-port-snippet').value.trim()) wtPortFill();
-        }
-
-        function webtoolsTab(tab, btn) {
-            document.querySelectorAll('#page-webtools .webtools-panel').forEach(p => p.classList.remove('wt-show'));
-            document.querySelectorAll('#webtools-tabs button').forEach(b => b.classList.remove('wt-active'));
-            if (btn) btn.classList.add('wt-active');
-            const p = document.getElementById('wt-panel-' + tab);
-            if (p) p.classList.add('wt-show');
-            if (tab === 'icons') wtLoadIcons(false);
-        }
-
-        function wtCopy(id) {
-            const el = document.getElementById(id);
+        function wtCopy(taId, notifyId) {
+            const el = document.getElementById(taId);
             if (!el) return;
-            navigator.clipboard.writeText(el.value).then(() => webtoolsNotify('Copied')).catch(() => webtoolsNotify('Copy failed'));
+            navigator.clipboard.writeText(el.value).then(() => {
+                if (notifyId) wtSetNotify(notifyId, 'Copied');
+            }).catch(() => {
+                if (notifyId) wtSetNotify(notifyId, 'Copy failed');
+            });
         }
 
         function wtEscXml(s) {
@@ -5616,11 +5617,11 @@
             const lastmod = new Date().toISOString().split('T')[0];
             if (!paths.length) {
                 document.getElementById('sm-out').value = '';
-                webtoolsNotify('Add at least one path');
+                wtSetNotify('wt-notify-sitemap', 'Add at least one path');
                 return;
             }
             if (!base && !paths.some(p => /^https?:\/\//i.test(p))) {
-                webtoolsNotify('Set base URL or use full URLs per line');
+                wtSetNotify('wt-notify-sitemap', 'Set base URL or use full URLs per line');
                 return;
             }
             let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
@@ -5632,7 +5633,7 @@
             }
             xml += '</urlset>';
             document.getElementById('sm-out').value = xml;
-            webtoolsNotify('Sitemap generated');
+            wtSetNotify('wt-notify-sitemap', 'Sitemap generated');
         }
 
         function wtEscAttr(s) {
@@ -5663,7 +5664,7 @@
             if (img) lines.push('<meta name="twitter:image" content="' + wtEscAttr(img) + '" />');
             if (twUser) lines.push('<meta name="twitter:site" content="@' + wtEscAttr(twUser.replace(/^@/, '')) + '" />');
             document.getElementById('og-out').value = lines.join('\n');
-            webtoolsNotify('Meta tags generated');
+            wtSetNotify('wt-notify-social', 'Meta tags generated');
         }
 
         function wtFaviconLoad() {
@@ -5681,11 +5682,11 @@
                 document.getElementById('fav-dl-btn').disabled = false;
                 document.getElementById('fav-html').value = '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />\n<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />';
                 URL.revokeObjectURL(u);
-                webtoolsNotify('Favicon preview ready');
+                wtSetNotify('wt-notify-favicon', 'Favicon preview ready');
             };
             img.onerror = () => {
                 URL.revokeObjectURL(u);
-                webtoolsNotify('Could not read image');
+                wtSetNotify('wt-notify-favicon', 'Could not read image');
             };
             img.src = u;
         }
@@ -5705,7 +5706,9 @@
         function wtIconCopy(name) {
             const u = 'https://unpkg.com/lucide-static@0.469.0/icons/' + name + '.svg';
             const tag = '<img src="' + u + '" alt="" width="24" height="24" />';
-            navigator.clipboard.writeText(tag).then(() => webtoolsNotify('Copied ' + name)).catch(() => webtoolsNotify('Copy failed'));
+            navigator.clipboard.writeText(tag).then(() => {
+                wtSetNotify('wt-notify-svgicons', 'Copied ' + name);
+            }).catch(() => wtSetNotify('wt-notify-svgicons', 'Copy failed'));
         }
 
         async function wtLoadIcons(force) {
@@ -5778,8 +5781,10 @@
                 }
             } catch (e) {
                 out.textContent = 'Error: ' + e.message;
+                wtSetNotify('wt-notify-speed', 'Error');
                 return;
             }
+            wtSetNotify('wt-notify-speed', 'Done');
             const sorted = [...times].sort((a, b) => a - b);
             const median = sorted[Math.floor(sorted.length / 2)];
             const mbps = (bytes * 8) / (median / 1000) / 1e6;
@@ -5887,6 +5892,7 @@
                 lines.push('Error: ' + e.message);
             }
             out.textContent = lines.join('\n');
+            wtSetNotify('wt-notify-hostdns', 'Lookup finished');
         }
 
         /* ========== SLUG GENERATOR ========== */
