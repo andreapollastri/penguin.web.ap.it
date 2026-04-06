@@ -2745,9 +2745,14 @@
         };
 
         function showPage(id, btn) {
+            const pageEl = document.getElementById('page-' + id);
+            if (!pageEl) {
+                console.error('Unknown page:', id);
+                return;
+            }
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.sidebar-nav button').forEach(b => b.classList.remove('active'));
-            document.getElementById('page-' + id).classList.add('active');
+            pageEl.classList.add('active');
             if (btn) btn.classList.add('active');
             document.getElementById('page-title').innerText = pageTitles[id] || '';
             closeSidebar();
@@ -2770,8 +2775,10 @@
             if (id === 'mdpreview') runMdPreview();
             const wtWide = new Set(['svgicons']);
             const mc = document.getElementById('main-content');
-            if (wtWide.has(id)) mc.classList.add('content-wide');
-            else mc.classList.remove('content-wide');
+            if (mc) {
+                if (wtWide.has(id)) mc.classList.add('content-wide');
+                else mc.classList.remove('content-wide');
+            }
             if (id === 'svgicons') {
                 const g = document.getElementById('wt-icon-grid');
                 if (g && g.dataset.loaded !== '1') wtLoadIcons(false);
@@ -5595,14 +5602,35 @@
             if (n) n.textContent = msg || '—';
         }
 
+        function wtCopyTextFallback(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                return document.execCommand('copy');
+            } finally {
+                document.body.removeChild(ta);
+            }
+        }
+
         function wtCopy(taId, notifyId) {
             const el = document.getElementById(taId);
             if (!el) return;
-            navigator.clipboard.writeText(el.value).then(() => {
-                if (notifyId) wtSetNotify(notifyId, 'Copied');
-            }).catch(() => {
-                if (notifyId) wtSetNotify(notifyId, 'Copy failed');
-            });
+            const text = el.value;
+            const done = (ok, failMsg) => {
+                if (notifyId) wtSetNotify(notifyId, ok ? 'Copied' : (failMsg || 'Copy failed'));
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => done(true)).catch(() => {
+                    done(wtCopyTextFallback(text));
+                });
+            } else {
+                done(wtCopyTextFallback(text));
+            }
         }
 
         function wtEscXml(s) {
@@ -5704,39 +5732,54 @@
         }
 
         function wtIconCopy(name) {
-            const u = 'https://unpkg.com/lucide-static@0.469.0/icons/' + name + '.svg';
+            const u = 'https://cdn.jsdelivr.net/npm/lucide-static@0.469.0/icons/' + encodeURIComponent(name) + '.svg';
             const tag = '<img src="' + u + '" alt="" width="24" height="24" />';
-            navigator.clipboard.writeText(tag).then(() => {
-                wtSetNotify('wt-notify-svgicons', 'Copied ' + name);
-            }).catch(() => wtSetNotify('wt-notify-svgicons', 'Copy failed'));
+            const fin = (ok) => wtSetNotify('wt-notify-svgicons', ok ? ('Copied ' + name) : 'Copy failed');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(tag).then(() => fin(true)).catch(() => fin(wtCopyTextFallback(tag)));
+            } else {
+                fin(wtCopyTextFallback(tag));
+            }
         }
 
         async function wtLoadIcons(force) {
             const grid = document.getElementById('wt-icon-grid');
             const st = document.getElementById('wt-icon-status');
+            if (!grid || !st) return;
             if (grid.dataset.loaded === '1' && !force) return;
             grid.innerHTML = '';
             st.textContent = 'Loading icon list…';
+            const seen = new Set();
             const names = [];
             try {
-                for (let page = 1; page <= 10; page++) {
-                    const r = await fetch('https://api.github.com/repos/lucide-icons/lucide/contents/icons?per_page=100&page=' + page);
-                    if (r.status === 403) throw new Error('rate limit');
+                for (let page = 1; page <= 12; page++) {
+                    const r = await fetch('https://api.github.com/repos/lucide-icons/lucide/contents/icons?per_page=1000&page=' + page);
+                    if (r.status === 403) {
+                        st.textContent = 'GitHub rate limit — using built-in list.';
+                        break;
+                    }
                     if (!r.ok) break;
                     const arr = await r.json();
                     if (!Array.isArray(arr) || !arr.length) break;
                     for (const x of arr) {
-                        if (x.name && x.name.endsWith('.svg')) names.push(x.name.replace(/\.svg$/i, ''));
+                        if (!x.name) continue;
+                        const m = x.name.match(/^(.+)\.(svg|json)$/i);
+                        if (!m) continue;
+                        const base = m[1];
+                        if (seen.has(base)) continue;
+                        seen.add(base);
+                        names.push(base);
                     }
-                    if (arr.length < 100) break;
+                    if (arr.length < 1000) break;
                 }
             } catch (e) {
-                st.textContent = 'GitHub API unavailable — using fallback set.';
+                st.textContent = 'GitHub API error — using built-in list. (' + (e.message || e) + ')';
             }
             if (!names.length) names.push(...WT_ICON_FALLBACK.split(','));
             grid.dataset.loaded = '1';
             st.textContent = names.length + ' icons — click to copy <img> tag (Lucide / unpkg)';
             const frag = document.createDocumentFragment();
+            const baseUrl = 'https://cdn.jsdelivr.net/npm/lucide-static@0.469.0/icons/';
             for (const name of names) {
                 const cell = document.createElement('div');
                 cell.className = 'wt-icon-cell';
@@ -5744,9 +5787,10 @@
                 cell.title = name;
                 cell.onclick = () => wtIconCopy(name);
                 const img = document.createElement('img');
-                img.src = 'https://unpkg.com/lucide-static@0.469.0/icons/' + name + '.svg';
+                img.src = baseUrl + encodeURIComponent(name) + '.svg';
                 img.alt = '';
                 img.loading = 'lazy';
+                img.referrerPolicy = 'no-referrer';
                 const lbl = document.createElement('div');
                 lbl.className = 'wt-icon-name';
                 lbl.textContent = name;
