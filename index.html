@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, cron, timestamp, cURL, and more. No signup required.">
+        content="Penguin — Free online generators and utilities for developers: password, UUID, JWT, bcrypt, Base64, QR code, cron, timestamp, cURL, and more. No signup required.">
     <title>Penguin — Generators and utilities for developers</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%F0%9F%90%A7</text></svg>">
@@ -274,6 +274,24 @@
         .cmd-box:hover {
             background: #050505;
             border-color: #444;
+        }
+
+        .qr-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            background: #0a0a0a;
+            border: 1px solid #1e1e1e;
+            border-radius: 5px;
+            margin-top: 16px;
+        }
+
+        .qr-wrap canvas,
+        .qr-wrap img {
+            display: block;
+            max-width: 100%;
+            height: auto;
         }
 
         .notify {
@@ -707,6 +725,7 @@
             <button onclick="showPage('fakeid', this)"><span class="icon">&gt;</span> Fake ID</button>
             <button onclick="showPage('base64', this)"><span class="icon">&gt;</span> Base64</button>
             <button onclick="showPage('urlparse', this)"><span class="icon">&gt;</span> URL Parse</button>
+            <button onclick="showPage('qrcode', this)"><span class="icon">&gt;</span> QR Code</button>
             <button onclick="showPage('slug', this)"><span class="icon">&gt;</span> Slug</button>
             <button onclick="showPage('crontab', this)"><span class="icon">&gt;</span> Crontab</button>
             <button onclick="showPage('timestamp', this)"><span class="icon">&gt;</span> Timestamp</button>
@@ -879,6 +898,41 @@
                         <button class="btn" onclick="genUUID()">&#x21BB; Generate</button>
                     </div>
                     <div class="notify" id="uuid-notify">Click UUID to copy</div>
+                </div>
+
+                <!-- QR CODE GENERATOR -->
+                <div id="page-qrcode" class="page">
+                    <div class="stat-bar">
+                        <span>FORMAT: QR CODE (ISO/IEC 18004)</span>
+                        <span>LOCAL / NO UPLOAD</span>
+                    </div>
+                    <div class="label">Text or URL_</div>
+                    <textarea id="qr-text" placeholder="https://example.com" rows="3" autocomplete="off"
+                        oninput="scheduleQR()"></textarea>
+                    <div class="row" style="margin-bottom:5px">
+                        <div>
+                            <div class="label">Size (px)</div>
+                            <input type="number" id="qr-size" value="256" min="128" max="512" step="32" oninput="genQR()">
+                        </div>
+                        <div>
+                            <div class="label">Error correction</div>
+                            <select id="qr-ecc" onchange="genQR()">
+                                <option value="L">L (~7%)</option>
+                                <option value="M" selected>M (~15%)</option>
+                                <option value="Q">Q (~25%)</option>
+                                <option value="H">H (~30%)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="btn-row" style="margin-top:10px">
+                        <button type="button" class="btn" onclick="genQR()">&#x21BB; Generate</button>
+                        <button type="button" class="btn" onclick="downloadQR()" id="qr-download"
+                            style="display:none">&#x2193; Download PNG</button>
+                    </div>
+                    <div class="qr-wrap" id="qr-wrap" style="display:none">
+                        <div id="qr-el"></div>
+                    </div>
+                    <div class="notify" id="qr-notify">Enter text or URL, then generate</div>
                 </div>
 
                 <!-- JSON-LD STRUCTURED DATA GENERATOR -->
@@ -1697,6 +1751,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
         /* ========== NAVIGATION ========== */
         const pageTitles = {
@@ -1711,6 +1766,7 @@
             fakeid: 'root@penguin: ~/fake-identity',
             base64: 'root@penguin: ~/base64',
             urlparse: 'root@penguin: ~/url-parse',
+            qrcode: 'root@penguin: ~/qr-code',
             slug: 'root@penguin: ~/slug',
             crontab: 'root@penguin: ~/crontab',
             timestamp: 'root@penguin: ~/timestamp',
@@ -1735,6 +1791,7 @@
             if (id === 'password' && document.getElementById('pwd-out').innerText === '--------------') genPassword();
             if (id === 'appkey' && document.getElementById('appkey-out').innerText === '----') genAppKey();
             if (id === 'linux' && !document.getElementById('linux-list').innerHTML) filterLinux();
+            if (id === 'qrcode') genQR();
         }
 
         /* ========== MOBILE SIDEBAR ========== */
@@ -1986,6 +2043,87 @@
                 document.getElementById('uuid-out').innerText =
                     `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
             }
+        }
+
+        /* ========== QR CODE GENERATOR ========== */
+        let qrTimer;
+        function scheduleQR() {
+            clearTimeout(qrTimer);
+            qrTimer = setTimeout(genQR, 200);
+        }
+
+        function genQR() {
+            const wrap = document.getElementById('qr-wrap');
+            const dl = document.getElementById('qr-download');
+            const el = document.getElementById('qr-el');
+            const notify = document.getElementById('qr-notify');
+
+            if (typeof QRCode === 'undefined') {
+                notify.innerText = 'QR library failed to load';
+                notify.style.color = '#ff6b6b';
+                return;
+            }
+
+            const text = document.getElementById('qr-text').value.trim();
+            if (!text) {
+                wrap.style.display = 'none';
+                dl.style.display = 'none';
+                el.innerHTML = '';
+                notify.innerText = 'Enter text or URL to encode';
+                notify.style.color = '#444';
+                return;
+            }
+
+            let size = parseInt(document.getElementById('qr-size').value, 10) || 256;
+            size = Math.max(128, Math.min(512, size));
+            const eccKey = document.getElementById('qr-ecc').value;
+            const levelMap = {
+                L: QRCode.CorrectLevel.L,
+                M: QRCode.CorrectLevel.M,
+                Q: QRCode.CorrectLevel.Q,
+                H: QRCode.CorrectLevel.H
+            };
+            const correctLevel = levelMap[eccKey] || QRCode.CorrectLevel.M;
+
+            el.innerHTML = '';
+            try {
+                new QRCode(el, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: '#00ff41',
+                    colorLight: '#1a1a1a',
+                    correctLevel: correctLevel
+                });
+                wrap.style.display = 'flex';
+                dl.style.display = 'inline-block';
+                notify.innerText = 'Download PNG or edit text above';
+                notify.style.color = 'var(--neon)';
+            } catch (e) {
+                wrap.style.display = 'none';
+                dl.style.display = 'none';
+                notify.innerText = (e && e.message) ? e.message : 'Cannot encode this data';
+                notify.style.color = '#ff6b6b';
+            }
+        }
+
+        function downloadQR() {
+            const host = document.getElementById('qr-el');
+            if (!host) return;
+            const canvas = host.querySelector('canvas');
+            const img = host.querySelector('img');
+            let dataUrl = '';
+            if (canvas && canvas.width) {
+                dataUrl = canvas.toDataURL('image/png');
+            } else if (img && img.src && img.src.indexOf('data:') === 0) {
+                dataUrl = img.src;
+            }
+            if (!dataUrl) return;
+            const a = document.createElement('a');
+            a.download = 'penguin-qrcode.png';
+            a.href = dataUrl;
+            a.rel = 'noopener';
+            a.click();
         }
 
         /* ========== JSON-LD STRUCTURED DATA GENERATOR ========== */
